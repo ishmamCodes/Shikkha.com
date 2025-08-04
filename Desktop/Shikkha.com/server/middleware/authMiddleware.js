@@ -1,21 +1,31 @@
+// middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-const JWT_SECRET = 'supersecretkey'; 
+const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: No token' });
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authorization token missing or invalid" });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // includes user.id
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    req.user = user; // ✅ This is the missing piece!
     next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid or expired token' });
+  } catch (error) {
+    console.error("[AuthMiddleware Error]", error);
+    return res.status(401).json({ error: "Token is invalid or expired" });
   }
 };
 

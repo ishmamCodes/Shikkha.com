@@ -7,9 +7,6 @@ const Messenger = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [groupName, setGroupName] = useState('');
-  const [groupMembers, setGroupMembers] = useState([]);
-  const [isGroupChat, setIsGroupChat] = useState(false);
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
   const [inbox, setInbox] = useState([]);
@@ -21,12 +18,12 @@ const Messenger = () => {
 
   useEffect(() => {
     let interval;
-    if (user && (selectedUser || isGroupChat)) {
+    if (user && selectedUser) {
       fetchMessages();
       interval = setInterval(fetchMessages, 3000);
     }
     return () => clearInterval(interval);
-  }, [selectedUser, isGroupChat]);
+  }, [selectedUser]);
 
   useEffect(() => {
     fetchInbox();
@@ -50,10 +47,7 @@ const Messenger = () => {
 
   const fetchMessages = async () => {
     try {
-      if (isGroupChat && groupName) {
-        const res = await axios.get(`/api/messages/group/${groupName}`);
-        setMessages(res.data);
-      } else if (selectedUser && user) {
+      if (selectedUser && user) {
         const res = await axios.get(
           `/api/messages/conversation/${user._id}/${selectedUser._id}`
         );
@@ -74,25 +68,26 @@ const Messenger = () => {
   };
 
   const sendMessage = async () => {
-    if (!text.trim() || (!selectedUser && !isGroupChat) || !user) {
+    if (!text.trim() || !selectedUser || !user) {
       console.error("Missing fields", { text, selectedUser, user });
       return;
     }
   
     try {
-      const payload = isGroupChat
-        ? { senderId: user._id, groupName, text }
-        : { senderId: user._id, receiverId: selectedUser?._id, text };
+      const payload = {
+        senderId: user._id,
+        receiverId: selectedUser._id,
+        text
+      };
   
       console.log("🚀 Sending payload:", JSON.stringify(payload, null, 2));
   
-      const url = isGroupChat ? '/api/messages/group' : '/api/messages';
-      const res = await axios.post(url, payload);
+      const res = await axios.post('/api/messages', payload);
   
       setText('');
       setMessages(prev => [...prev, res.data || {
         senderId: user._id,
-        [isGroupChat ? 'groupName' : 'receiverId']: isGroupChat ? groupName : selectedUser._id,
+        receiverId: selectedUser._id,
         text,
         timestamp: new Date()
       }]);
@@ -100,35 +95,6 @@ const Messenger = () => {
       console.error("Send message error:", error.response?.data || error.message);
     }
   };
-  
-  
-  
-
-  const handleGroupCreate = async () => {
-    if (!groupName || groupMembers.length < 2) {
-      alert("Group name and at least 2 members required.");
-      return;
-    }
-    try {
-      const payload = {
-        groupName,
-        members: groupMembers.map(m => m._id),
-      };
-      console.log("Creating group with payload:", payload);
-  
-      const response = await axios.post('/api/messages/group/create', payload);
-  
-      console.log("Group created response:", response.data);
-  
-      setIsGroupChat(true);
-      setSelectedUser(null);
-      fetchMessages();
-    } catch (error) {
-      console.error("Create group error:", error);
-      alert("Failed to create group");
-    }
-  };
-  
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -154,7 +120,6 @@ const Messenger = () => {
               }`}
               onClick={() => {
                 setSelectedUser(conv.user);
-                setIsGroupChat(false);
               }}
             >
               <div className="flex justify-between">
@@ -172,7 +137,7 @@ const Messenger = () => {
           ))}
         </div>
 
-        {/* Search + Groups */}
+        {/* Search */}
         <div className="bg-white rounded-lg shadow p-4">
           <div className="mb-4">
             <div className="flex">
@@ -199,60 +164,22 @@ const Messenger = () => {
                 className={`p-3 rounded cursor-pointer hover:bg-gray-100 ${selectedUser?._id === u._id ? 'bg-blue-50' : ''}`}
                 onClick={() => {
                   setSelectedUser(u);
-                  setIsGroupChat(false);
                 }}
               >
                 <div className="font-medium">{u.username}</div>
                 <div className="text-sm text-gray-500">{u.role}</div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!groupMembers.some(m => m._id === u._id)) {
-                      setGroupMembers(prev => [...prev, u]);
-                    }
-                  }}
-                  className="text-xs text-green-600 mt-1"
-                >
-                  Add to group
-                </button>
               </div>
             ))}
-          </div>
-
-          <div className="mt-6 border-t pt-4">
-            <h3 className="font-medium mb-2">Create Group</h3>
-            <input
-              type="text"
-              placeholder="Group name"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              className="w-full border p-2 rounded mb-2"
-            />
-            <div className="mb-2">
-              <span className="text-sm">Members: </span>
-              {groupMembers.map(m => (
-                <span key={m._id} className="text-xs bg-gray-200 px-2 py-1 rounded mr-1">
-                  {m.username}
-                </span>
-              ))}
-            </div>
-            <button
-              onClick={handleGroupCreate}
-              disabled={!groupName || groupMembers.length < 2}
-              className={`w-full py-2 rounded ${!groupName || groupMembers.length < 2 ? 'bg-gray-300' : 'bg-green-600 text-white'}`}
-            >
-              Create Group
-            </button>
           </div>
         </div>
 
         {/* Chat */}
         <div className="md:col-span-2 bg-white rounded-lg shadow">
-          {selectedUser || isGroupChat ? (
+          {selectedUser ? (
             <div className="h-full flex flex-col">
               <div className="border-b p-4">
                 <h2 className="font-bold">
-                  {isGroupChat ? `Group: ${groupName}` : `Chat with ${selectedUser?.username}`}
+                  Chat with {selectedUser?.username}
                 </h2>
               </div>
 
@@ -299,7 +226,7 @@ const Messenger = () => {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
-              Select a user or create a group to start chatting
+              Select a user to start chatting
             </div>
           )}
         </div>
