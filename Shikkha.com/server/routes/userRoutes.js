@@ -15,8 +15,8 @@ import authMiddleware from '../middleware/authMiddleware.js';
 router.post('/signup', signup);
 router.post('/login', login);
 router.get('/logout', logout);
-router.get('/id/:userId', getUserById);
-router.put('/:id', updateUserProfile);
+router.get('/id/:userId', authMiddleware, getUserById);
+router.put('/:id', authMiddleware, updateUserProfile);
 router.post('/forgot-password', forgotPassword);
 
 // Enhanced user search endpoint for messenger

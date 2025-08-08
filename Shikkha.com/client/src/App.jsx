@@ -6,6 +6,7 @@ import LoginSignup from './pages/LoginSignup';
 import Blog from './pages/Blog';
 import Messenger from './components/Messenger';
 import ForgotPassword from './pages/ForgotPassword';
+import EducatorDashboard from './features/educator/pages/EducatorDashboard.jsx';
 
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/messenger" element={<Messenger />} />
           <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/dashboard/educator/*" element={<EducatorDashboard />} />
         </Routes>
       </div>
 

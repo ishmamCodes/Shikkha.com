@@ -7,6 +7,7 @@ import session from "express-session";
 import userRoutes from "./routes/userRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js"; 
 import messageRoutes from "./routes/messageRoutes.js";
+import educatorsRouter from "./routes/educators.js";
 
 const app = express();
 const PORT = 4000;
@@ -36,8 +37,10 @@ app.use(session({
 app.use("/api/auth", userRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api", educatorsRouter);
 app.use('/api/users', userRoutes);
 app.use('/uploads', express.static('uploads'));
+app.use('/logo.jpg', express.static('client/public/logo.jpg'));
 
 
 // Health Check Route

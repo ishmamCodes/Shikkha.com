@@ -68,7 +68,7 @@ const LoginSignup = () => {
         admin: "/dashboard/admin",
       }[user.role];
 
-      navigate('/');
+      navigate(route || '/');
     } catch (err) {
       setError(err.message);
     } finally {
