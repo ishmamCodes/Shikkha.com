@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Educator from "../models/Educator.js";
 
 // Configuration
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
@@ -15,6 +16,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 export const signup = async (req, res) => {
   try {
     const { username, password, birthday, role } = req.body;
+    const educatorProfile = req.body.educatorProfile; // optional extended educator fields
 
     // Validation
     if (!username || !password || !birthday || !role) {
@@ -46,6 +48,29 @@ export const signup = async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN
     });
+
+    // If educator role, create empty profile (or with provided details)
+    if (role === 'educator') {
+      await Educator.findOneAndUpdate(
+        { user: user._id },
+        {
+          $set: {
+            name: educatorProfile?.name || '',
+            email: educatorProfile?.email || '',
+            phone: educatorProfile?.phone || '',
+            avatarUrl: educatorProfile?.avatarUrl || '',
+            bio: educatorProfile?.bio || '',
+            experienceYears: educatorProfile?.experienceYears || 0,
+            experienceDescription: educatorProfile?.experienceDescription || '',
+            educationBackground: Array.isArray(educatorProfile?.educationBackground) ? educatorProfile.educationBackground : [],
+            achievements: Array.isArray(educatorProfile?.achievements) ? educatorProfile.achievements : [],
+            certifications: Array.isArray(educatorProfile?.certifications) ? educatorProfile.certifications : [],
+            socialLinks: educatorProfile?.socialLinks || { linkedin: '', twitter: '', website: '' },
+          },
+        },
+        { upsert: true, new: true }
+      );
+    }
 
     res.status(201).json({
       success: true,
