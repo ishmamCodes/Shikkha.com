@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "start": "npm start --prefix server",
+    "dev": "npm run server --prefix server"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",

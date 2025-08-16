@@ -1,27 +1,31 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const messageSchema = new mongoose.Schema({
-  senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  receiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  text: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now }
-});
+const messageSchema = new mongoose.Schema(
+  {
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    content: { type: String, required: true },
+    messageType: { 
+      type: String, 
+      enum: ["text", "image", "file", "audio"], 
+      default: "text" 
+    },
+    fileUrl: { type: String, default: "" }, // for attachments
+    fileName: { type: String, default: "" },
+    fileSize: { type: Number, default: 0 },
+    isRead: { type: Boolean, default: false },
+    readAt: { type: Date, default: null },
+    appointmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Appointment" }, // if related to an appointment
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course" }, // if related to a course
+    replyTo: { type: mongoose.Schema.Types.ObjectId, ref: "Message" }, // for reply messages
+    isDeleted: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
 
-const groupMessageSchema = new mongoose.Schema({
-  groupName: { type: String, required: true },
-  senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  text: String,
-  timestamp: { type: Date, default: Date.now }
-});
+// Index for efficient querying
+messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
+messageSchema.index({ receiverId: 1, isRead: 1 });
 
-const groupSchema = new mongoose.Schema({
-  groupName: { type: String, required: true },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  messages: [groupMessageSchema],
-  createdAt: { type: Date, default: Date.now }
-});
-
-// Exporting both message and group schemas
-export const Message = mongoose.model('Message', messageSchema);
-export const Group = mongoose.model('Group', groupSchema);
+const Message = mongoose.models.Message || mongoose.model("Message", messageSchema);
 export default Message;

@@ -42,7 +42,8 @@ const LoginSignup = () => {
       const body = {
         username: formData.username,
         password: formData.password,
-        ...(isSignup && { birthday: formData.birthday, role }),
+        role,
+        ...(isSignup && { birthday: formData.birthday }),
       };
 
       const res = await fetch(API_BASE_URL + endpoint, {
@@ -63,7 +64,7 @@ const LoginSignup = () => {
       localStorage.setItem("user", JSON.stringify(user));
 
       const route = {
-        student: "/dashboard/student",
+        student: "/",
         educator: "/dashboard/educator",
         admin: "/dashboard/admin",
       }[user.role];
@@ -279,7 +280,7 @@ const LoginSignup = () => {
       </div>
 
       {/* Add these styles to your CSS */}
-      <style jsx>{`
+      <style>{`
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);

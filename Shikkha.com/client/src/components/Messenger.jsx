@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Messenger = () => {
   const token = localStorage.getItem("token");
@@ -7,9 +8,6 @@ const Messenger = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [groupName, setGroupName] = useState('');
-  const [groupMembers, setGroupMembers] = useState([]);
-  const [isGroupChat, setIsGroupChat] = useState(false);
   const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
   const [inbox, setInbox] = useState([]);
@@ -21,12 +19,12 @@ const Messenger = () => {
 
   useEffect(() => {
     let interval;
-    if (user && (selectedUser || isGroupChat)) {
+    if (user && selectedUser) {
       fetchMessages();
       interval = setInterval(fetchMessages, 3000);
     }
     return () => clearInterval(interval);
-  }, [selectedUser, isGroupChat]);
+  }, [selectedUser]);
 
   useEffect(() => {
     fetchInbox();
@@ -50,10 +48,7 @@ const Messenger = () => {
 
   const fetchMessages = async () => {
     try {
-      if (isGroupChat && groupName) {
-        const res = await axios.get(`/api/messages/group/${groupName}`);
-        setMessages(res.data);
-      } else if (selectedUser && user) {
+      if (selectedUser && user) {
         const res = await axios.get(
           `/api/messages/conversation/${user._id}/${selectedUser._id}`
         );
@@ -72,27 +67,28 @@ const Messenger = () => {
       console.error("Fetch inbox error:", error);
     }
   };
-
+  
   const sendMessage = async () => {
-    if (!text.trim() || (!selectedUser && !isGroupChat) || !user) {
+    if (!text.trim() || !selectedUser || !user) {
       console.error("Missing fields", { text, selectedUser, user });
       return;
     }
   
     try {
-      const payload = isGroupChat
-        ? { senderId: user._id, groupName, text }
-        : { senderId: user._id, receiverId: selectedUser?._id, text };
+      const payload = {
+        senderId: user._id,
+        receiverId: selectedUser._id,
+        text
+      };
   
       console.log("🚀 Sending payload:", JSON.stringify(payload, null, 2));
   
-      const url = isGroupChat ? '/api/messages/group' : '/api/messages';
-      const res = await axios.post(url, payload);
+      const res = await axios.post('/api/messages', payload);
   
       setText('');
       setMessages(prev => [...prev, res.data || {
         senderId: user._id,
-        [isGroupChat ? 'groupName' : 'receiverId']: isGroupChat ? groupName : selectedUser._id,
+        receiverId: selectedUser._id,
         text,
         timestamp: new Date()
       }]);
@@ -100,35 +96,6 @@ const Messenger = () => {
       console.error("Send message error:", error.response?.data || error.message);
     }
   };
-  
-  
-  
-
-  const handleGroupCreate = async () => {
-    if (!groupName || groupMembers.length < 2) {
-      alert("Group name and at least 2 members required.");
-      return;
-    }
-    try {
-      const payload = {
-        groupName,
-        members: groupMembers.map(m => m._id),
-      };
-      console.log("Creating group with payload:", payload);
-  
-      const response = await axios.post('/api/messages/group/create', payload);
-  
-      console.log("Group created response:", response.data);
-  
-      setIsGroupChat(true);
-      setSelectedUser(null);
-      fetchMessages();
-    } catch (error) {
-      console.error("Create group error:", error);
-      alert("Failed to create group");
-    }
-  };
-  
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -136,173 +103,260 @@ const Messenger = () => {
     }
   };
 
-  return (
-    <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Messenger</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-        {/* Inbox */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="font-bold mb-4">Inbox</h3>
-          {inbox.length === 0 && <p className="text-gray-500 text-sm">No conversations</p>}
-          {inbox.map((conv) => (
-            <div 
-              key={conv._id}
-              className={`p-3 rounded cursor-pointer hover:bg-gray-100 mb-2 ${
-                selectedUser?._id === conv.user?._id ? 'bg-blue-50' : ''
-              }`}
-              onClick={() => {
-                setSelectedUser(conv.user);
-                setIsGroupChat(false);
-              }}
-            >
-              <div className="flex justify-between">
-                <span className="font-medium">{conv.user?.username || 'Unknown'}</span>
-                {conv.unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {conv.unreadCount}
-                  </span>
-                )}
-              </div>
-              <div className="text-sm text-gray-600 truncate">
-                {conv.lastMessage?.text || 'No messages yet'}
-              </div>
-            </div>
-          ))}
-        </div>
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
 
-        {/* Search + Groups */}
-        <div className="bg-white rounded-lg shadow p-4">
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
+  const messageVariants = {
+    hidden: { opacity: 0, x: -50 },
+    show: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 50 }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto p-6 h-screen flex flex-col bg-gradient-to-br from-indigo-900 to-purple-800">
+      <motion.h1 
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="text-3xl font-bold mb-6 bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent"
+      >
+        Messenger
+      </motion.h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1">
+        {/* Inbox */}
+        <motion.div 
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 border-2 border-purple-100 overflow-hidden"
+        >
+          <h3 className="font-bold mb-4 text-lg text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">
+            Conversations
+          </h3>
+          {inbox.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 text-center"
+            >
+              <p className="text-purple-600">Start a new conversation!</p>
+            </motion.div>
+          )}
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-3 overflow-y-auto max-h-[70vh] pr-2"
+          >
+            {inbox.map((conv) => (
+              <motion.div
+                key={conv._id}
+                variants={itemVariants}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className={`p-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                  selectedUser?._id === conv.user?._id 
+                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 border-2 border-purple-200' 
+                    : 'bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border border-purple-50'
+                }`}
+                onClick={() => setSelectedUser(conv.user)}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-purple-900">{conv.user?.username || 'Unknown'}</span>
+                  {conv.unreadCount > 0 && (
+                    <motion.span 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-md"
+                    >
+                      {conv.unreadCount}
+                    </motion.span>
+                  )}
+                </div>
+                <div className="text-sm text-purple-600 truncate mt-1">
+                  {conv.lastMessage?.text || 'No messages yet'}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+
+        {/* Search */}
+        <motion.div 
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 border-2 border-blue-100"
+        >
           <div className="mb-4">
-            <div className="flex">
+            <div className="flex shadow-lg">
               <input
                 type="text"
                 placeholder="Search users..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 border p-2 rounded-l"
+                className="flex-1 border-2 border-r-0 border-purple-200 p-3 rounded-l-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all bg-white/80"
               />
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleSearch}
-                className="bg-blue-600 text-white px-4 py-2 rounded-r"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-3 rounded-r-xl shadow-lg"
               >
                 Search
-              </button>
+              </motion.button>
             </div>
           </div>
 
-          <div className="space-y-2">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-3 overflow-y-auto max-h-[60vh] pr-2"
+          >
             {searchResults.map((u) => (
-              <div
+              <motion.div
                 key={u._id}
-                className={`p-3 rounded cursor-pointer hover:bg-gray-100 ${selectedUser?._id === u._id ? 'bg-blue-50' : ''}`}
-                onClick={() => {
-                  setSelectedUser(u);
-                  setIsGroupChat(false);
-                }}
+                variants={itemVariants}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className={`p-3 rounded-xl cursor-pointer transition-all ${
+                  selectedUser?._id === u._id 
+                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 border-2 border-purple-200' 
+                    : 'bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border border-purple-50'
+                }`}
+                onClick={() => setSelectedUser(u)}
               >
-                <div className="font-medium">{u.username}</div>
-                <div className="text-sm text-gray-500">{u.role}</div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!groupMembers.some(m => m._id === u._id)) {
-                      setGroupMembers(prev => [...prev, u]);
-                    }
-                  }}
-                  className="text-xs text-green-600 mt-1"
-                >
-                  Add to group
-                </button>
-              </div>
+                <div className="font-medium text-purple-900">{u.username}</div>
+                <div className="text-sm text-purple-500">{u.role}</div>
+              </motion.div>
             ))}
-          </div>
-
-          <div className="mt-6 border-t pt-4">
-            <h3 className="font-medium mb-2">Create Group</h3>
-            <input
-              type="text"
-              placeholder="Group name"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              className="w-full border p-2 rounded mb-2"
-            />
-            <div className="mb-2">
-              <span className="text-sm">Members: </span>
-              {groupMembers.map(m => (
-                <span key={m._id} className="text-xs bg-gray-200 px-2 py-1 rounded mr-1">
-                  {m.username}
-                </span>
-              ))}
-            </div>
-            <button
-              onClick={handleGroupCreate}
-              disabled={!groupName || groupMembers.length < 2}
-              className={`w-full py-2 rounded ${!groupName || groupMembers.length < 2 ? 'bg-gray-300' : 'bg-green-600 text-white'}`}
-            >
-              Create Group
-            </button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Chat */}
-        <div className="md:col-span-2 bg-white rounded-lg shadow">
-          {selectedUser || isGroupChat ? (
+        <motion.div 
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="md:col-span-2 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border-2 border-purple-100 flex flex-col"
+        >
+          {selectedUser ? (
             <div className="h-full flex flex-col">
-              <div className="border-b p-4">
-                <h2 className="font-bold">
-                  {isGroupChat ? `Group: ${groupName}` : `Chat with ${selectedUser?.username}`}
+              <div className="border-b-2 border-purple-200 p-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-2xl">
+                <h2 className="font-bold text-white text-xl">
+                  Chat with {selectedUser?.username}
                 </h2>
               </div>
 
               <div className="flex-1 p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                 {messages.length === 0 && (
-                  <p className="text-gray-400 text-sm">No messages yet.</p>
-                )}
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`mb-4 ${msg.senderId?._id === user._id ? 'text-right' : 'text-left'}`}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center h-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-8"
                   >
-                    <div className={`inline-block p-3 rounded-lg ${msg.senderId?._id === user._id ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                      <div className="text-sm text-gray-500 mb-1">
-                        {msg.senderId?._id === user._id ? 'You' : msg.senderId?.username || 'Unknown'}
-                      </div>
-                      <div>{msg.text}</div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    <p className="text-purple-600">No messages yet. Start the conversation!</p>
+                  </motion.div>
+                )}
+                <AnimatePresence>
+                  {messages.map((msg, idx) => (
+                    <motion.div
+                      key={idx}
+                      variants={messageVariants}
+                      initial="hidden"
+                      animate="show"
+                      exit="exit"
+                      transition={{ type: 'spring', stiffness: 300 }}
+                      className={`mb-4 flex ${msg.senderId?._id === user._id ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.03 }}
+                        className={`inline-block p-4 rounded-2xl max-w-xs md:max-w-md shadow-md ${
+                          msg.senderId?._id === user._id 
+                            ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-br-none' 
+                            : 'bg-gradient-to-r from-gray-100 to-purple-50 rounded-bl-none border border-purple-100'
+                        }`}
+                      >
+                        <div className={`text-sm mb-1 ${
+                          msg.senderId?._id === user._id ? 'text-purple-100' : 'text-purple-700'
+                        }`}>
+                          {msg.senderId?._id === user._id ? 'You' : msg.senderId?.username || 'Unknown'}
+                        </div>
+                        <div className={msg.senderId?._id === user._id ? 'text-white' : 'text-purple-900'}>
+                          {msg.text}
+                        </div>
+                        <div className={`text-xs mt-1 ${
+                          msg.senderId?._id === user._id ? 'text-purple-200' : 'text-purple-500'
+                        }`}>
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
 
-              <div className="border-t p-4">
-                <div className="flex">
+              <div className="border-t-2 border-purple-200 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-b-2xl">
+                <div className="flex shadow-lg">
                   <input
                     type="text"
                     placeholder="Type a message..."
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    className="flex-1 border p-2 rounded-l"
+                    className="flex-1 border-2 border-r-0 border-purple-200 p-3 rounded-l-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all bg-white"
                   />
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={sendMessage}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-r"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-r-xl shadow-lg"
                   >
                     Send
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-500">
-              Select a user or create a group to start chatting
-            </div>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl"
+            >
+              <motion.div
+                animate={{
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: 'reverse'
+                }}
+                className="text-6xl mb-4 text-purple-400"
+              >
+                👋
+              </motion.div>
+              <h3 className="text-xl font-medium text-purple-700 mb-2">Select a user to start chatting</h3>
+              <p className="text-purple-500">Find someone in your inbox or search for users</p>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

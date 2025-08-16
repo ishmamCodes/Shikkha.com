@@ -100,18 +100,26 @@ export const signup = async (req, res) => {
  */
 export const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
 
     // Validate input
-    if (!username || !password) {
+    if (!username || !password || !role) {
       return res.status(400).json({
         success: false,
-        message: "Please provide username and password"
+        message: "Please provide username, password, and role"
       });
     }
 
-    // Check for user
-    const user = await User.findOne({ username }).select('+password');
+    let user;
+    // Check for user based on role
+    if (role === 'educator') {
+      user = await Educator.findOne({ email: username }).select('+password');
+    } else if (role === 'student') {
+      user = await User.findOne({ username: username, role: 'student' }).select('+password');
+    } else {
+        return res.status(400).json({ success: false, message: 'Invalid role specified' });
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,

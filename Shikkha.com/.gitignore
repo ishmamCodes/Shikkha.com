@@ -5,3 +5,14 @@ build/
 .env
 server/.env
 client/.env
+ 
+# Do not commit uploaded files (avatars/materials)
+uploads/
+server/uploads/
+**/uploads/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

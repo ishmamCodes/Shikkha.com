@@ -13,7 +13,13 @@ import {
   getCourseStudents,
   removeStudentFromCourse,
   getEducatorAppointments,
+  updateAppointmentStatus,
+  getEducatorMessages,
+  sendMessage,
+  markMessageAsRead,
   handleUpload,
+  getCourseMaterials,
+  deleteMaterial,
   getDashboardStats,
   requestEmailChange,
   listMyEmailChangeRequests,
@@ -47,8 +53,18 @@ router.delete("/courses/:id", authMiddleware, authorizeRole(["educator", "admin"
 router.get("/courses/:id/students", authMiddleware, authorizeRole(["educator", "admin"]), getCourseStudents);
 router.delete("/courses/:id/students/:studentId", authMiddleware, authorizeRole(["educator", "admin"]), removeStudentFromCourse);
 
+// Course Materials
+router.get("/courses/:courseId/materials", authMiddleware, authorizeRole(["educator", "admin"]), getCourseMaterials);
+router.delete("/materials/:materialId", authMiddleware, authorizeRole(["educator", "admin"]), deleteMaterial);
+
 // Appointments
 router.get("/appointments", authMiddleware, authorizeRole(["educator", "admin"]), getEducatorAppointments);
+router.put("/appointments/:id/status", authMiddleware, authorizeRole(["educator", "admin"]), updateAppointmentStatus);
+
+// Messaging
+router.get("/messages", authMiddleware, authorizeRole(["educator", "admin"]), getEducatorMessages);
+router.post("/messages", authMiddleware, authorizeRole(["educator", "admin"]), sendMessage);
+router.put("/messages/:messageId/read", authMiddleware, authorizeRole(["educator", "admin"]), markMessageAsRead);
 
 // Uploads
 router.post("/uploads", authMiddleware, authorizeRole(["educator", "admin"]), upload.single("file"), handleUpload);
