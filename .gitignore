@@ -4,6 +4,7 @@ node_modules
 # Environment variables
 .env
 /server/.env
+/client/.env
 
 # Mac specific
 .DS_Store

@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@huggingface/inference": "^4.7.1",
+    "dotenv": "^17.2.1",
+    "express-rate-limit": "^8.0.1",
+    "node-fetch": "^3.3.2"
+  }
+}
