@@ -181,7 +181,7 @@ const ForgotPassword = () => {
       </div>
 
       {/* Add these styles to your CSS */}
-      <style jsx>{`
+      <style>{`
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);

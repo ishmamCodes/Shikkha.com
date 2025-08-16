@@ -23,8 +23,6 @@ const EducatorSidebar = () => {
         <NavLink to="/dashboard/educator/manage-courses" className={linkClasses}>My Courses</NavLink>
         <NavLink to="/dashboard/educator/manage-courses" className={linkClasses}>Student Enrollments</NavLink>
         <NavLink to="/dashboard/educator/upload-materials" className={linkClasses}>Upload Materials</NavLink>
-        <NavLink to="/dashboard/educator/appointments" className={linkClasses}>Messages</NavLink>
-        <NavLink to="/dashboard/educator/appointments" className={linkClasses}>Earnings</NavLink>
         <NavLink to="/dashboard/educator/profile" className={linkClasses}>Profile</NavLink>
         <NavLink to="/dashboard/educator/settings" className={linkClasses}>Settings</NavLink>
       </nav>

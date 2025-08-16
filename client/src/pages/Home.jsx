@@ -4,6 +4,9 @@ import { motion } from 'framer-motion'; // Added this import
 
 const Home = () => {
   const navigate = useNavigate();
+  const user = (() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  })();
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -66,6 +69,23 @@ const Home = () => {
           <p className="text-xl md:text-2xl text-white/80 mb-8">
             Your personalized learning journey starts here
           </p>
+
+          {/* User role + Educator CTA */}
+          {user?.role && (
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-white/10 text-white/90 border border-white/15 backdrop-blur-md">
+                Role: {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+              </span>
+              {user.role === 'educator' && (
+                <button
+                  onClick={() => navigate('/dashboard/educator')}
+                  className="px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-purple-500 shadow-md hover:shadow-lg transition-all"
+                >
+                  Go to Dashboard
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -103,7 +123,7 @@ const Home = () => {
       </div>
 
       {/* Add these styles to your CSS */}
-      <style jsx>{`
+      <style>{`
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);

@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -26,6 +27,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       {/* Navbar */}
       {!shouldHideLayout && <Navbar />}
 

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Educator from "../models/Educator.js";
 
 // Configuration
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
@@ -15,6 +16,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 export const signup = async (req, res) => {
   try {
     const { username, password, birthday, role } = req.body;
+    const educatorProfile = req.body.educatorProfile; // optional extended educator fields
 
     // Validation
     if (!username || !password || !birthday || !role) {
@@ -47,6 +49,29 @@ export const signup = async (req, res) => {
       expiresIn: JWT_EXPIRES_IN
     });
 
+    // If educator role, create empty profile (or with provided details)
+    if (role === 'educator') {
+      await Educator.findOneAndUpdate(
+        { user: user._id },
+        {
+          $set: {
+            name: educatorProfile?.name || '',
+            email: educatorProfile?.email || '',
+            phone: educatorProfile?.phone || '',
+            avatarUrl: educatorProfile?.avatarUrl || '',
+            bio: educatorProfile?.bio || '',
+            experienceYears: educatorProfile?.experienceYears || 0,
+            experienceDescription: educatorProfile?.experienceDescription || '',
+            educationBackground: Array.isArray(educatorProfile?.educationBackground) ? educatorProfile.educationBackground : [],
+            achievements: Array.isArray(educatorProfile?.achievements) ? educatorProfile.achievements : [],
+            certifications: Array.isArray(educatorProfile?.certifications) ? educatorProfile.certifications : [],
+            socialLinks: educatorProfile?.socialLinks || { linkedin: '', twitter: '', website: '' },
+          },
+        },
+        { upsert: true, new: true }
+      );
+    }
+
     res.status(201).json({
       success: true,
       token,
@@ -75,18 +100,26 @@ export const signup = async (req, res) => {
  */
 export const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
 
     // Validate input
-    if (!username || !password) {
+    if (!username || !password || !role) {
       return res.status(400).json({
         success: false,
-        message: "Please provide username and password"
+        message: "Please provide username, password, and role"
       });
     }
 
-    // Check for user
-    const user = await User.findOne({ username }).select('+password');
+    let user;
+    // Check for user based on role
+    if (role === 'educator') {
+      user = await Educator.findOne({ email: username }).select('+password');
+    } else if (role === 'student') {
+      user = await User.findOne({ username: username, role: 'student' }).select('+password');
+    } else {
+        return res.status(400).json({ success: false, message: 'Invalid role specified' });
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,

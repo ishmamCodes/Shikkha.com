@@ -1,8 +1,8 @@
 import React from 'react';
-import footer_logo from '../Assets/logo.png';
-import instagram_icon from '../Assets/instagram_icon.png';
-import pintester_icon from '../Assets/pintester_icon.png';
-import whatsapp_icon from '../Assets/whatsapp_icon.png';
+import footer_logo from '../assets/logo.png';
+import instagram_icon from '../assets/instagram_icon.png';
+import pintester_icon from '../assets/pintester_icon.png';
+import whatsapp_icon from '../assets/whatsapp_icon.png';
 
 const Footer = () => {
   return (
@@ -37,7 +37,7 @@ const Footer = () => {
 
       <div className="flex flex-col items-center gap-5 w-full text-gray-800 text-sm">
         <hr className="w-full border-t border-gray-300 m-0" />
-        <p>Ishmam © 2025 All Rights Reserved</p>
+        <p>Copyright © 2025 All Rights Reserved</p>
       </div>
     </div>
   );

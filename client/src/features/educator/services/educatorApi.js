@@ -54,10 +54,35 @@ const educatorApi = {
     const { data } = await api.get(`/appointments`, { params: { educatorId } });
     return data?.data;
   },
+  async updateAppointmentStatus(appointmentId, status, notes) {
+    const { data } = await api.put(`/appointments/${appointmentId}/status`, { status, notes });
+    return data?.data;
+  },
+  async getMessages(studentId = null) {
+    const params = studentId ? { studentId } : {};
+    const { data } = await api.get('/messages', { params });
+    return data?.data;
+  },
+  async sendMessage(payload) {
+    const { data } = await api.post('/messages', payload);
+    return data?.data;
+  },
+  async markMessageAsRead(messageId) {
+    const { data } = await api.put(`/messages/${messageId}/read`);
+    return data?.data;
+  },
   async uploadFile(formData) {
     const { data } = await api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
     const fullUrl = data?.url?.startsWith('http') ? data.url : `${SERVER_ORIGIN}${data?.url || ''}`;
     return { ...data, url: fullUrl };
+  },
+  async getCourseMaterials(courseId) {
+    const { data } = await api.get(`/courses/${courseId}/materials`);
+    return data?.data;
+  },
+  async deleteMaterial(materialId) {
+    const { data } = await api.delete(`/materials/${materialId}`);
+    return data;
   },
   async getStats() {
     const { data } = await api.get('/dashboard/stats');

@@ -11,12 +11,12 @@ import {
 import User from '../models/User.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 
-// Auth routes (unchanged)
+// Auth routes
 router.post('/signup', signup);
 router.post('/login', login);
 router.get('/logout', logout);
-router.get('/id/:userId', getUserById);
-router.put('/:id', updateUserProfile);
+router.get('/id/:userId', authMiddleware, getUserById);
+router.put('/:userId', authMiddleware, updateUserProfile);
 router.post('/forgot-password', forgotPassword);
 
 // Enhanced user search endpoint for messenger
@@ -40,9 +40,9 @@ router.get('/search', authMiddleware, async (req, res) => {
 });
 
 // Get minimal user details (optimized for messaging)
-router.get('/for-messenger/:id', authMiddleware, async (req, res) => {
+router.get('/for-messenger/:userId', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id)
+    const user = await User.findById(req.params.userId)
       .select('username name avatar role')
       .lean();
 

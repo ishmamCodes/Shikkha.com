@@ -1,8 +1,7 @@
 // routes/messageRoutes.js
 import express from "express";
-import { Message} from "../models/Message.js";
+import Message from "../models/Message.js";
 import authMiddleware from "../middleware/authMiddleware.js";
-import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -11,13 +10,19 @@ const router = express.Router();
  */
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { senderId, receiverId, text } = req.body;
+    const { receiverId, content, messageType = "text" } = req.body;
+    const senderId = req.user.id;
 
-    if (!receiverId || !text || !senderId) {
-      return res.status(400).json({ error: "senderId, receiverId, and text are required" });
+    if (!receiverId || !content) {
+      return res.status(400).json({ error: "receiverId and content are required" });
     }
 
-    const message = new Message({ senderId, receiverId, text });
+    const message = new Message({ 
+      senderId, 
+      receiverId, 
+      content,
+      messageType 
+    });
     await message.save();
 
     const populatedMsg = await Message.findById(message._id)
@@ -33,7 +38,6 @@ router.post("/", authMiddleware, async (req, res) => {
 
 /**
  * Get conversation between two users
- * Consider adding pagination (limit, skip) for scalability
  */
 router.get("/conversation/:userId1/:userId2", authMiddleware, async (req, res) => {
   try {
@@ -44,8 +48,9 @@ router.get("/conversation/:userId1/:userId2", authMiddleware, async (req, res) =
         { senderId: userId1, receiverId: userId2 },
         { senderId: userId2, receiverId: userId1 },
       ],
+      isDeleted: false
     })
-      .sort({ timestamp: 1 })
+      .sort({ createdAt: 1 })
       .populate("senderId", "username")
       .populate("receiverId", "username");
 
@@ -56,30 +61,26 @@ router.get("/conversation/:userId1/:userId2", authMiddleware, async (req, res) =
   }
 });
 
-
 /**
  * Get inbox: last message per conversation
  */
 router.get("/inbox", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user?.id || req.user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
-    }
+    const userId = req.user.id;
 
     const messages = await Message.find({
       $or: [{ senderId: userId }, { receiverId: userId }],
+      isDeleted: false
     })
       .populate("senderId", "username role")
       .populate("receiverId", "username role")
-      .sort({ timestamp: -1 });
+      .sort({ createdAt: -1 });
 
     const inboxMap = new Map();
 
     messages.forEach((msg) => {
       const otherUser =
-        msg.senderId._id.toString() === userId.toString() ? msg.receiverId : msg.senderId;
+        msg.senderId._id.toString() === userId ? msg.receiverId : msg.senderId;
       if (!otherUser) return;
 
       const key = otherUser._id.toString();
@@ -87,12 +88,12 @@ router.get("/inbox", authMiddleware, async (req, res) => {
       if (!inboxMap.has(key)) {
         inboxMap.set(key, {
           user: otherUser,
-          lastMessage: { text: msg.text, timestamp: msg.timestamp },
-          unreadCount: msg.receiverId._id.toString() === userId.toString() && !msg.read ? 1 : 0,
+          lastMessage: { content: msg.content, createdAt: msg.createdAt },
+          unreadCount: msg.receiverId._id.toString() === userId && !msg.isRead ? 1 : 0,
         });
       } else if (
-        msg.receiverId._id.toString() === userId.toString() &&
-        !msg.read
+        msg.receiverId._id.toString() === userId &&
+        !msg.isRead
       ) {
         inboxMap.get(key).unreadCount += 1;
       }

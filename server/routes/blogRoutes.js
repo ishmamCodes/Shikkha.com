@@ -62,9 +62,9 @@ router.get('/', async (req, res) => {
 });
 
 // Like a blog
-router.post('/:id/like', authMiddleware, async (req, res) => {
+router.post('/:blogId/like', authMiddleware, async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findById(req.params.blogId);
     if (!blog) return res.status(404).json({ error: "Blog not found" });
 
     const userId = req.user.id;
@@ -88,12 +88,12 @@ router.post('/:id/like', authMiddleware, async (req, res) => {
 });
 
 // Comment on a blog
-router.post('/:id/comment', authMiddleware, async (req, res) => {
+router.post('/:blogId/comment', authMiddleware, async (req, res) => {
   try {
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: "Comment text required" });
 
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findById(req.params.blogId);
     if (!blog) return res.status(404).json({ error: "Blog not found" });
 
     blog.comments.push({

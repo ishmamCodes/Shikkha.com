@@ -1,30 +1,54 @@
-import dotenv from "dotenv";
-dotenv.config();
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
 import session from "express-session";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 // Routes
 import userRoutes from "./routes/userRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js"; 
 import messageRoutes from "./routes/messageRoutes.js";
 import educatorsRouter from "./routes/educators.js";
+import studentRoutes from "./routes/studentRoutes.js";
 import videoRoutes from "./routes/videoRoutes.js";
 
-
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
-// MongoDB URI (note: keep secure in production)
-const MONGO_URI = "mongodb+srv://shikkha_admin:Shikkha123@cluster0.xrtd0cz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+// MongoDB URI
+// Use MONGO_URI from environment, fallback to local MongoDB for development
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/shikkha";
 
-// Middleware Setup
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+// Enhanced CORS configuration
+const corsOptions = {
+  // Reflect the request Origin (enables any localhost port like 5176 during dev)
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 
+// Pre-flight requests
+app.options(/.*/, cors(corsOptions));
+
+// Ensure CORS headers always present and short-circuit OPTIONS
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', corsOptions.methods.join(','));
+  res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(','));
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
@@ -40,20 +64,33 @@ app.use(session({
 // Route Mounting
 app.use("/api/auth", userRoutes);
 app.use("/api/blogs", blogRoutes);
-app.use("/api", educatorsRouter);
 app.use("/api/messages", messageRoutes);
-app.use('/api/users', userRoutes);
+app.use("/api", educatorsRouter);
+app.use("/api/students", studentRoutes);
 app.use("/api/videos", videoRoutes);
 app.use('/uploads', express.static('uploads'));
-
+app.use('/logo.jpg', express.static('client/public/logo.jpg'));
 
 // Health Check Route
 app.get("/", (req, res) => {
   res.send("Shikkha API is running!");
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
 // MongoDB Connection and Server Start
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 10000,
+  dbName: process.env.MONGO_DB || undefined,
+})
 .then(() => {
   console.log("✅ Connected to MongoDB");
   app.listen(PORT, () => {
