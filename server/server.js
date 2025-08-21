@@ -22,6 +22,9 @@ import videoRoutes from "./routes/videoRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import instructorRoutes from "./routes/instructorRoutes.js";
 import marketplaceRoutes from "./routes/marketplace/index.js";
+import appointmentRoutes from "./routes/appointments.js";
+import examRoutes from "./routes/exams.js";
+import evaluationRoutes from "./routes/evaluations.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -79,6 +82,9 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/instructors", instructorRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/exams", examRoutes);
+app.use("/api/evaluations", evaluationRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/logo.jpg', express.static('client/public/logo.jpg'));
 
