@@ -1,6 +1,24 @@
 import Exam from "../models/Exam.js";
+import ExamResult from "../models/ExamResult.js";
 import Course from "../models/Course.js";
 import Educator from "../models/Educator.js";
+import Student from "../models/Student.js";
+
+// GPA calculation utility function
+const calculateGPA = (percentage) => {
+  if (percentage >= 97) return 4.0;
+  if (percentage >= 93) return 3.7;
+  if (percentage >= 90) return 3.3;
+  if (percentage >= 87) return 3.0;
+  if (percentage >= 83) return 2.7;
+  if (percentage >= 80) return 2.3;
+  if (percentage >= 77) return 2.0;
+  if (percentage >= 73) return 1.7;
+  if (percentage >= 70) return 1.3;
+  if (percentage >= 67) return 1.0;
+  if (percentage >= 65) return 0.7;
+  return 0.0;
+};
 
 // Create a new exam
 export const createExam = async (req, res) => {
@@ -68,6 +86,52 @@ export const createExam = async (req, res) => {
   } catch (error) {
     console.error("Create exam error:", error);
     res.status(500).json({ success: false, message: "Failed to create exam" });
+  }
+};
+
+// List exams with optional query filters (supports ?courseId=... or ?studentId=...)
+export const listExams = async (req, res) => {
+  try {
+    const { courseId, educatorId, studentId } = req.query;
+    let query = {};
+    
+    if (studentId) {
+      // Get courses the student is enrolled in
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({ success: false, message: "Student not found" });
+      }
+      
+      // Find courses where student is enrolled
+      const courses = await Course.find({ students: studentId }).select('_id');
+      const courseIds = courses.map(course => course._id);
+      query.courseId = { $in: courseIds };
+    } else {
+      if (courseId) query.courseId = courseId;
+      if (educatorId) query.educatorId = educatorId;
+    }
+
+    const exams = await Exam.find(query)
+      .populate('courseId', 'title category')
+      .populate('educatorId', 'fullName email')
+      .sort({ createdAt: -1 });
+
+    // If studentId is provided, check which exams the student has already taken
+    let examsWithAttemptStatus = exams;
+    if (studentId) {
+      const examResults = await ExamResult.find({ studentId }).select('examId');
+      const takenExamIds = examResults.map(result => result.examId.toString());
+      
+      examsWithAttemptStatus = exams.map(exam => ({
+        ...exam.toObject(),
+        hasAttempted: takenExamIds.includes(exam._id.toString())
+      }));
+    }
+
+    res.json({ success: true, data: examsWithAttemptStatus });
+  } catch (error) {
+    console.error("List exams error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch exams" });
   }
 };
 
@@ -232,21 +296,195 @@ export const deleteExam = async (req, res) => {
   }
 };
 
-// Submit exam (placeholder for Shadman's implementation)
+// Submit exam with auto-grading
 export const submitExam = async (req, res) => {
   try {
-    const { examId } = req.params;
-    const { studentId, answers } = req.body;
+    const paramExamId = req.params?.examId;
+    const { examId: bodyExamId, studentId, answers, timeSpent } = req.body;
+    const examId = paramExamId || bodyExamId;
 
-    // This is a placeholder endpoint for future implementation
-    // Shadman will implement the full grading logic here
-    
-    res.status(501).json({
-      success: false,
-      message: "Exam submission feature will be implemented in the next phase"
+    // Validate required fields
+    if (!examId || !studentId || !answers || !Array.isArray(answers)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "examId, studentId and answers are required" 
+      });
+    }
+
+    // Fetch exam with correct answers
+    const exam = await Exam.findById(examId).populate('courseId', 'title');
+    if (!exam) {
+      return res.status(404).json({ success: false, message: "Exam not found" });
+    }
+
+    // Validate student exists
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // Check if student has already attempted this exam
+    const existingResult = await ExamResult.findOne({ examId, studentId });
+    if (existingResult) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "You have already attempted this exam" 
+      });
+    }
+
+    // Grade the exam
+    let earnedPoints = 0;
+    const gradedAnswers = [];
+
+    for (const answer of answers) {
+      const question = exam.questions.find(q => q._id.toString() === answer.questionId);
+      if (!question) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Question ${answer.questionId} not found in exam` 
+        });
+      }
+
+      const isCorrect = question.correctAnswer === answer.selectedOption;
+      const points = isCorrect ? (question.points || 1) : 0;
+      earnedPoints += points;
+
+      gradedAnswers.push({
+        questionId: answer.questionId,
+        selectedOption: answer.selectedOption,
+        isCorrect,
+        points
+      });
+    }
+
+    // Save exam result
+    const examResult = new ExamResult({
+      examId,
+      studentId,
+      answers: gradedAnswers,
+      score: earnedPoints,
+      totalQuestions: exam.questions.length,
+      percentage: (earnedPoints / exam.questions.length) * 100,
+      timeSpent: timeSpent || 0,
+      submittedAt: new Date()
+    });
+
+    await examResult.save();
+
+    res.json({
+      success: true,
+      message: "Exam submitted successfully",
+      data: {
+        score: earnedPoints,
+        totalQuestions: exam.questions.length,
+        percentage: Math.round((earnedPoints / exam.questions.length) * 100),
+        timeSpent: timeSpent || 0,
+        submittedAt: examResult.submittedAt,
+        examTitle: exam.title,
+        courseTitle: exam.courseId?.title || 'Unknown Course'
+      }
     });
   } catch (error) {
     console.error("Submit exam error:", error);
     res.status(500).json({ success: false, message: "Failed to submit exam" });
+  }
+};
+
+// Get student grades
+export const getStudentGrades = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    // Validate student exists
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // Get all exam results for this student with proper population
+    const examResults = await ExamResult.find({ studentId })
+      .populate({
+        path: 'examId',
+        select: 'title courseId',
+        populate: {
+          path: 'courseId',
+          select: 'title category'
+        }
+      })
+      .sort({ submittedAt: -1 });
+
+    // Format results for frontend
+    const grades = examResults.map(result => ({
+      examTitle: result.examId?.title || 'Unknown Exam',
+      courseTitle: result.examId?.courseId?.title || 'Unknown Course',
+      courseId: result.examId?.courseId?._id,
+      score: result.score,
+      totalQuestions: result.totalQuestions,
+      percentage: result.percentage,
+      submittedAt: result.submittedAt,
+      attemptNumber: 1 // For now, since we only allow one attempt
+    }));
+
+    // Calculate GPA based on course averages
+    const courseGrades = {};
+    grades.forEach(grade => {
+      if (grade.courseId) {
+        const courseIdStr = grade.courseId.toString();
+        if (!courseGrades[courseIdStr]) {
+          courseGrades[courseIdStr] = {
+            courseTitle: grade.courseTitle,
+            percentages: []
+          };
+        }
+        courseGrades[courseIdStr].percentages.push(grade.percentage);
+      }
+    });
+
+    // Calculate average percentage per course and convert to GPA
+    const courseAverages = Object.values(courseGrades).map(course => {
+      const avgPercentage = course.percentages.reduce((sum, p) => sum + p, 0) / course.percentages.length;
+      return {
+        courseTitle: course.courseTitle,
+        avgPercentage: Math.round(avgPercentage),
+        gpa: calculateGPA(avgPercentage)
+      };
+    });
+
+    const overallGPA = courseAverages.length > 0 
+      ? (courseAverages.reduce((sum, course) => sum + course.gpa, 0) / courseAverages.length).toFixed(2)
+      : 0;
+
+    res.json({
+      success: true,
+      data: grades,
+      gpa: {
+        overall: parseFloat(overallGPA),
+        courseBreakdown: courseAverages,
+        totalCourses: courseAverages.length
+      }
+    });
+  } catch (error) {
+    console.error("Get student grades error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch grades" });
+  }
+};
+
+// Get exam results for educators
+export const getExamResults = async (req, res) => {
+  try {
+    const { examId } = req.params;
+
+    const results = await ExamResult.find({ examId })
+      .populate('studentId', 'fullName email')
+      .populate('examId', 'title')
+      .sort({ submittedAt: -1 });
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error("Get exam results error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch exam results" });
   }
 };

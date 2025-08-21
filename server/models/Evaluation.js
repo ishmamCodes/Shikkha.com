@@ -25,8 +25,8 @@ const evaluationSchema = new mongoose.Schema(
     },
     comment: { 
       type: String, 
-      required: true,
-      maxlength: 1000
+      required: false,
+      maxlength: 300
     },
     isAnonymous: { 
       type: Boolean, 
