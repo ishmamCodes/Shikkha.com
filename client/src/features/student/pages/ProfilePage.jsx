@@ -66,14 +66,14 @@ const ProfilePage = () => {
         // Update profile stats
         const enrolledCount = enrolledRes.success ? enrolledRes.data.length : 0;
         const gradesData = gradesRes.success ? gradesRes.grades || gradesRes.data || [] : [];
-        const completedCount = gradesData.filter(g => g.status === 'completed').length;
-        const avgGPA = gradesData.length > 0 ? 
-          gradesData.reduce((sum, g) => sum + (parseFloat(g.gpa) || 0), 0) / gradesData.length : 0;
+        const gpaInfo = gradesRes.success ? gradesRes.gpa : null;
+        const completedCount = gradesData.length; // All exam results count as completed courses
+        const currentGPA = gpaInfo ? gpaInfo.overall : (profileRes.data?.gpa || 0);
 
         setProfileStats({
           enrolledCourses: enrolledCount,
           completedCourses: completedCount,
-          currentGPA: avgGPA.toFixed(2)
+          currentGPA: parseFloat(currentGPA).toFixed(2)
         });
       } catch (e) {
         console.error('Error loading profile data:', e);

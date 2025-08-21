@@ -47,6 +47,24 @@ export const getEducatorEvaluations = async (req, res) => {
   }
 };
 
+// Summary endpoint for instructor average rating and counts
+export const getInstructorEvaluationsSummary = async (req, res) => {
+  try {
+    const { id } = req.params; // instructor id
+    // Ensure educator exists
+    const educator = await Educator.findById(id).select('_id');
+    if (!educator) {
+      return res.status(404).json({ success: false, message: 'Educator not found' });
+    }
+
+    const stats = await calculateEducatorStats(id);
+    return res.status(200).json({ success: true, data: stats });
+  } catch (error) {
+    console.error('getInstructorEvaluationsSummary error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch evaluations summary' });
+  }
+};
+
 // Get evaluations for a specific course
 export const getCourseEvaluations = async (req, res) => {
   try {
@@ -118,7 +136,7 @@ export const createEvaluation = async (req, res) => {
       educatorId: course.instructor,
       studentId,
       rating: parseInt(rating),
-      comment: comment.trim()
+      comment: (comment || '').trim()
     });
 
     await evaluation.save();
