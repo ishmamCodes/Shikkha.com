@@ -8,6 +8,8 @@ import ProfilePage from './ProfilePage.jsx';
 import CreateCoursePage from './CreateCoursePage.jsx';
 import ManageCoursesPage from './ManageCoursesPage.jsx';
 import AppointmentsPage from './AppointmentsPage.jsx';
+import ExamsPage from './ExamsPage.jsx';
+import EvaluationsPage from './EvaluationsPage.jsx';
 import UploadMaterialsPage from './UploadMaterialsPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 
@@ -33,6 +35,8 @@ const EducatorDashboard = () => {
           <Route path="create-course" element={<CreateCoursePage />} />
           <Route path="manage-courses" element={<ManageCoursesPage />} />
           <Route path="appointments" element={<AppointmentsPage />} />
+          <Route path="exams" element={<ExamsPage />} />
+          <Route path="evaluations" element={<EvaluationsPage />} />
           <Route path="upload-materials" element={<UploadMaterialsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
