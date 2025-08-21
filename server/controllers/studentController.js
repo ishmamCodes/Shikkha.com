@@ -616,15 +616,117 @@ export const getStudentCourseMaterials = async (req, res) => {
   }
 };
 
+// Get completed courses for evaluation
+export const getCompletedCourses = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    // Validate student exists
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // Get enrolled courses (assuming completion based on enrollment for now)
+    const courses = await Course.find({ 
+      students: studentId 
+    }).populate('instructor', 'fullName email');
+
+    // Check which courses have been evaluated by this student
+    const Evaluation = (await import('../models/Evaluation.js')).default;
+    const existingEvaluations = await Evaluation.find({ studentId }).select('courseId');
+    const evaluatedCourseIds = existingEvaluations.map(evaluation => evaluation.courseId.toString());
+
+    // Format courses for evaluation
+    const completedCourses = courses.map(course => ({
+      _id: course._id,
+      title: course.title,
+      description: course.description,
+      category: course.category,
+      instructor: course.instructor,
+      enrolledAt: course.createdAt,
+      completedAt: course.updatedAt, // Placeholder - in real app, track actual completion
+      hasEvaluated: evaluatedCourseIds.includes(course._id.toString())
+    }));
+
+    res.json({
+      success: true,
+      data: completedCourses
+    });
+  } catch (error) {
+    console.error("Get completed courses error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch completed courses" });
+  }
+};
+
 // Student profile
 export const getStudentProfile = async (req, res) => {
   try {
     const studentId = req.user.id || req.user._id;
     const profile = await Student.findById(studentId).select('-password');
     if (!profile) {
-      return res.status(404).json({ success: false, message: 'Student profile not found' });
+      return res.status(404).json({ success: false, message: "Student not found" });
     }
-    return res.status(200).json({ success: true, data: profile });
+
+    // Calculate GPA from exam results
+    const ExamResult = (await import('../models/ExamResult.js')).default;
+    const examResults = await ExamResult.find({ studentId })
+      .populate({
+        path: 'examId',
+        populate: {
+          path: 'courseId',
+          select: 'title'
+        }
+      });
+
+    // Calculate GPA based on course averages
+    const courseGrades = {};
+    examResults.forEach(result => {
+      if (result.examId?.courseId?._id) {
+        const courseIdStr = result.examId.courseId._id.toString();
+        if (!courseGrades[courseIdStr]) {
+          courseGrades[courseIdStr] = {
+            courseTitle: result.examId.courseId.title,
+            percentages: []
+          };
+        }
+        courseGrades[courseIdStr].percentages.push(result.percentage);
+      }
+    });
+
+    // Calculate average percentage per course and convert to GPA
+    const calculateGPA = (percentage) => {
+      if (percentage >= 97) return 4.0;
+      if (percentage >= 93) return 3.7;
+      if (percentage >= 90) return 3.3;
+      if (percentage >= 87) return 3.0;
+      if (percentage >= 83) return 2.7;
+      if (percentage >= 80) return 2.3;
+      if (percentage >= 77) return 2.0;
+      if (percentage >= 73) return 1.7;
+      if (percentage >= 70) return 1.3;
+      if (percentage >= 67) return 1.0;
+      if (percentage >= 65) return 0.7;
+      return 0.0;
+    };
+
+    const courseAverages = Object.values(courseGrades).map(course => {
+      const avgPercentage = course.percentages.reduce((sum, p) => sum + p, 0) / course.percentages.length;
+      return calculateGPA(avgPercentage);
+    });
+
+    const overallGPA = courseAverages.length > 0 
+      ? (courseAverages.reduce((sum, gpa) => sum + gpa, 0) / courseAverages.length).toFixed(2)
+      : 0;
+
+    return res.status(200).json({ 
+      success: true, 
+      data: {
+        ...profile.toObject(),
+        gpa: parseFloat(overallGPA),
+        totalCourses: courseAverages.length
+      }
+    });
   } catch (err) {
     console.error("[getStudentProfile]", err);
     return res.status(500).json({ success: false, message: "Failed to fetch student profile" });
