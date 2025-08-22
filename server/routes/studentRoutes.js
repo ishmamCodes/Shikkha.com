@@ -12,6 +12,7 @@ import {
   enrollInCourse,
   getStudentCourses,
   getStudentCourseById,
+  getStudentPurchases,
   unenrollFromCourse,
   getStudentCourseMaterials,
   downloadStudentCourseMaterial,
@@ -97,6 +98,8 @@ router.get("/courses", authMiddleware, authorizeRole(["student", "admin"]), getS
 router.delete("/courses/:courseId/enroll", authMiddleware, authorizeRole(["student", "admin"]), unenrollFromCourse);
 // Alias for backward compatibility
 router.get("/enrolled-courses", authMiddleware, authorizeRole(["student", "admin"]), getStudentCourses);
+// Student purchases
+router.get("/purchases", authMiddleware, authorizeRole(["student", "admin"]), getStudentPurchases);
 // Course materials (student)
 router.get("/courses/:courseId/materials", authMiddleware, authorizeRole(["student", "admin"]), getStudentCourseMaterials);
 router.get("/courses/:courseId/materials/:materialId/download", authMiddleware, authorizeRole(["student", "admin"]), downloadStudentCourseMaterial);

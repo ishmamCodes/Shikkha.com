@@ -11,6 +11,7 @@ import Appointment from "../models/Appointment.js";
 import Material from "../models/Material.js";
 import Message from "../models/Message.js";
 import EmailChangeRequest from "../models/EmailChangeRequest.js";
+import Enrollment from "../models/Enrollment.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -302,6 +303,8 @@ export const createCourse = async (req, res) => {
       thumbnailUrl, 
       privacy, 
       price, 
+      isPaid,
+      maxStudents,
       duration, 
       tags,
       scheduleDays,
@@ -333,6 +336,8 @@ export const createCourse = async (req, res) => {
       instructorName: educator.fullName,
       privacy: privacy === "private" ? "private" : "public",
       price: price || 0,
+      isPaid: Boolean(isPaid) || (price && Number(price) > 0),
+      maxStudents: maxStudents === null || maxStudents === undefined || maxStudents === '' ? null : Number(maxStudents),
       duration: duration || "",
       tags: tags || [],
       scheduleDays: scheduleDays || [],
@@ -363,6 +368,8 @@ export const updateCourse = async (req, res) => {
       thumbnailUrl, 
       privacy, 
       price, 
+      isPaid,
+      maxStudents,
       duration, 
       tags 
     }) => ({ 
@@ -373,6 +380,8 @@ export const updateCourse = async (req, res) => {
       thumbnailUrl, 
       privacy, 
       price, 
+      isPaid, 
+      maxStudents,
       duration, 
       tags 
     }))(req.body);
@@ -385,6 +394,17 @@ export const updateCourse = async (req, res) => {
 
     if (updates.privacy && !["public", "private"].includes(updates.privacy)) {
       return res.status(400).json({ success: false, message: "Invalid privacy value" });
+    }
+
+    // Normalize paid-related fields if provided
+    if (updates.price !== undefined) {
+      updates.price = Number(updates.price) || 0;
+    }
+    if (updates.isPaid !== undefined) {
+      updates.isPaid = Boolean(updates.isPaid) || (updates.price && Number(updates.price) > 0);
+    }
+    if (updates.maxStudents !== undefined) {
+      updates.maxStudents = updates.maxStudents === null || updates.maxStudents === '' ? null : Number(updates.maxStudents);
     }
 
     const updated = await Course.findByIdAndUpdate(id, updates, { new: true });
@@ -421,7 +441,33 @@ export const getCourseStudents = async (req, res) => {
     if (String(course.instructor) !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({ success: false, message: "Forbidden" });
     }
-    res.status(200).json({ success: true, data: course.students || [] });
+
+    // Get students from both direct enrollment (students array) and enrollment records
+    const [directStudents, enrollmentRecords] = await Promise.all([
+      course.students || [],
+      Enrollment.find({ courseId: id, status: 'active' })
+        .populate('studentId', 'username fullName role _id')
+    ]);
+
+    // Combine and deduplicate students
+    const studentMap = new Map();
+    
+    // Add direct students
+    directStudents.forEach(student => {
+      studentMap.set(student._id.toString(), student);
+    });
+    
+    // Add enrollment-based students
+    enrollmentRecords.forEach(enrollment => {
+      if (enrollment.studentId) {
+        studentMap.set(enrollment.studentId._id.toString(), enrollment.studentId);
+      }
+    });
+
+    const students = Array.from(studentMap.values());
+    console.log(`Found ${students.length} students for course ${id}`);
+
+    res.status(200).json({ success: true, data: students });
   } catch (err) {
     console.error("[getCourseStudents]", err);
     res.status(500).json({ success: false, message: "Failed to fetch students" });

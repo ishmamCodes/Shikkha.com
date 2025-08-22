@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import studentApi from '../../student/services/studentApi';
 import toast from 'react-hot-toast';
 import { FaUser, FaUsers, FaClock, FaBook, FaCheckCircle } from 'react-icons/fa';
+import paymentApi from '../../../api/paymentApi';
+import { useUser } from '../../../context/UserContext';
 
 const CourseDetailsPage = () => {
   const { id } = useParams();
@@ -10,6 +12,7 @@ const CourseDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -36,16 +39,34 @@ const CourseDetailsPage = () => {
   const handleEnroll = async () => {
     setEnrolling(true);
     try {
-      const response = await studentApi.enrollInCourse(id);
+      if (!course) return;
+
+      // Paid course -> create Stripe Checkout Session
+      if (course.isPaid && Number(course.price) > 0) {
+        if (!user?._id) {
+          toast.error('Please log in to enroll');
+          return;
+        }
+        const resp = await paymentApi.createCoursePaymentSession(id, user._id);
+        if (resp?.success && resp?.sessionUrl) {
+          window.location.href = resp.sessionUrl;
+          return;
+        }
+        toast.error(resp?.message || 'Failed to start payment');
+        return;
+      }
+
+      // Free course -> existing flow
+      const response = await paymentApi.enrollInFreeCourse(id, user?._id);
       if (response.success) {
         toast.success('Successfully enrolled!');
         setIsEnrolled(true);
       } else {
-        toast.error(response.message);
+        toast.error(response.message || 'Failed to enroll');
       }
     } catch (error) {
       console.error('Error enrolling in course:', error);
-      toast.error('Failed to enroll in course');
+      toast.error('Failed to enroll');
     } finally {
       setEnrolling(false);
     }
@@ -103,7 +124,7 @@ const CourseDetailsPage = () => {
                   disabled={enrolling}
                   className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:bg-purple-300"
                 >
-                  {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                  {enrolling ? 'Processing...' : (course?.isPaid && Number(course?.price) > 0 ? `Pay with Stripe ($${Number(course.price).toFixed(2)})` : 'Enroll for Free')}
                 </button>
               )}
             </div>

@@ -10,6 +10,8 @@ const CreateCoursePage = () => {
     difficultyLevel: 'Beginner',
     privacy: 'public',
     price: 0,
+    isPaid: false,
+    maxStudents: '',
     duration: '',
     tags: [],
     scheduleDays: [],
@@ -119,7 +121,9 @@ const CreateCoursePage = () => {
       const courseData = {
         ...form,
         thumbnailUrl: thumbnailUrl || '',
-        tags: form.tags.filter(tag => tag.length > 0)
+        tags: form.tags.filter(tag => tag.length > 0),
+        maxStudents: form.maxStudents ? parseInt(form.maxStudents) : null,
+        price: form.isPaid ? parseFloat(form.price) : 0
       };
       
       const course = await educatorApi.createCourse(courseData);
@@ -133,6 +137,8 @@ const CreateCoursePage = () => {
         difficultyLevel: 'Beginner',
         privacy: 'public',
         price: 0,
+        isPaid: false,
+        maxStudents: '',
         duration: '',
         tags: [],
         scheduleDays: [],
@@ -206,20 +212,78 @@ const CreateCoursePage = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        {/* Payment Settings */}
+        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+          <h3 className="text-lg font-medium text-purple-800 mb-3">Payment Settings</h3>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isPaid"
+                name="isPaid"
+                checked={form.isPaid}
+                onChange={(e) => setForm(f => ({ ...f, isPaid: e.target.checked, price: e.target.checked ? f.price : 0 }))}
+                className="w-4 h-4 accent-purple-600"
+              />
+              <label htmlFor="isPaid" className="text-sm font-medium text-purple-800">
+                This is a paid course
+              </label>
+            </div>
+            
+            {form.isPaid && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-purple-800 mb-1">Price (BDT) *</label>
+                  <input 
+                    type="number" 
+                    name="price" 
+                    value={form.price} 
+                    onChange={handleChange}
+                    min="1"
+                    step="0.01"
+                    placeholder="29.99"
+                    required={form.isPaid}
+                    className="w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Revenue split: 60% educator, 40% platform</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-purple-800 mb-1">Max Students *</label>
+                  <input 
+                    type="number" 
+                    name="maxStudents" 
+                    value={form.maxStudents} 
+                    onChange={handleChange}
+                    min="1"
+                    placeholder="Required for paid courses"
+                    required={form.isPaid}
+                    className="w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Required for paid courses</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Free Course Capacity */}
+        {!form.isPaid && (
           <div>
-            <label className="block text-sm font-medium text-purple-800 mb-1">Price (BDT)</label>
+            <label className="block text-sm font-medium text-purple-800 mb-1">Max Students (Optional)</label>
             <input 
               type="number" 
-              name="price" 
-              value={form.price} 
+              name="maxStudents" 
+              value={form.maxStudents} 
               onChange={handleChange}
-              min="0"
-              step="1"
-              placeholder="0"
+              min="1"
+              placeholder="Leave empty for unlimited enrollment"
               className="w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-purple-500" 
             />
+            <p className="text-xs text-gray-500 mt-1">Optional for free courses - leave empty for unlimited</p>
           </div>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-purple-800 mb-1">Duration</label>
             <input 

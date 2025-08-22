@@ -109,6 +109,10 @@ const educatorApi = {
     const { data } = await api.get('/dashboard/stats');
     return data?.data;
   },
+  async getEarnings(educatorId) {
+    const { data } = await api.get(`/educators/${educatorId}/earnings`);
+    return data?.data;
+  },
   async createExam(payload) {
     const { data } = await api.post('/exams', payload);
     return data?.data;

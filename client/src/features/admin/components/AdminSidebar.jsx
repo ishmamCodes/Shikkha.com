@@ -31,7 +31,8 @@ const AdminSidebar = () => {
     { path: '/admin/dashboard/students', icon: FaUserGraduate, label: 'Manage Students' },
     { path: '/admin/dashboard/add-instructor', icon: FaUserPlus, label: 'Add Instructor' },
     { path: '/admin/dashboard/blogs', icon: FaBlog, label: 'Manage Blogs' },
-    { path: '/admin/dashboard/books', icon: FaBook, label: 'Manage Books' }
+    { path: '/admin/dashboard/books', icon: FaBook, label: 'Manage Books' },
+    { path: '/admin/dashboard/sales', icon: FaShoppingCart, label: 'Manage Sales' }
   ];
 
   return (

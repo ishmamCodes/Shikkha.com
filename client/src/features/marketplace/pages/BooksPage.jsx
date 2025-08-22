@@ -11,27 +11,74 @@ const BooksPage = () => {
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [purchasedBooks, setPurchasedBooks] = useState([]);
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch books
         const params = Object.fromEntries(searchParams.entries());
-        const response = await studentApi.getBooks(params);
-        if (response.success) {
-          setBooks(response.books);
-          setPagination(response.pagination);
+        const booksResponse = await studentApi.getBooks(params);
+        if (booksResponse.success) {
+          setBooks(booksResponse.books);
+          setPagination(booksResponse.pagination);
+        }
+
+        // Fetch purchased books for logged-in students
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.role === 'student') {
+          try {
+            const purchasesResponse = await studentApi.getPurchases();
+            if (purchasesResponse.success) {
+              const purchasedBookIds = purchasesResponse.data.map(purchase => purchase.bookId);
+              setPurchasedBooks(purchasedBookIds);
+            }
+          } catch (error) {
+            console.error('Error fetching purchases:', error);
+            // Don't show error toast for purchases as it's not critical
+          }
         }
       } catch (error) {
         console.error('Error fetching books:', error);
         toast.error('Failed to load books');
       } finally {
         setLoading(false);
+        if (initialLoad) setInitialLoad(false);
       }
     };
 
-    fetchBooks();
+    fetchData();
   }, [searchParams]);
+
+  // Listen for purchase updates
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'lastPurchaseUpdate') {
+        // Refresh purchased books when purchase is updated
+        const fetchPurchases = async () => {
+          try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.role === 'student') {
+              const purchasesResponse = await studentApi.getPurchases();
+              if (purchasesResponse.success) {
+                const purchasedBookIds = purchasesResponse.data.map(purchase => purchase.bookId);
+                setPurchasedBooks(purchasedBookIds);
+                console.log('Refreshed purchased book IDs:', purchasedBookIds);
+              }
+            }
+          } catch (error) {
+            console.error('Error refreshing purchases:', error);
+          }
+        };
+        fetchPurchases();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleFilterChange = (filters) => {
     setSearchParams(filters);
@@ -58,7 +105,7 @@ const BooksPage = () => {
           </div>
 
           <div className="w-full md:w-3/4">
-            {loading ? (
+            {loading && initialLoad ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => <BookCard.Skeleton key={i} />)}
               </div>
@@ -66,7 +113,11 @@ const BooksPage = () => {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {books.map(book => (
-                    <BookCard key={book._id} book={book} />
+                    <BookCard 
+                      key={book._id} 
+                      book={book} 
+                      isPurchased={purchasedBooks.includes(book._id)}
+                    />
                   ))}
                 </div>
                 <Pagination pagination={pagination} onPageChange={handlePageChange} />

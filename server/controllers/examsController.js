@@ -335,6 +335,7 @@ export const submitExam = async (req, res) => {
     // Grade the exam
     let earnedPoints = 0;
     const gradedAnswers = [];
+    const totalPoints = exam.questions.reduce((sum, q) => sum + (q.points || 1), 0);
 
     for (const answer of answers) {
       const question = exam.questions.find(q => q._id.toString() === answer.questionId);
@@ -357,14 +358,17 @@ export const submitExam = async (req, res) => {
       });
     }
 
-    // Save exam result
+    // Save exam result (align with ExamResult schema requirements)
     const examResult = new ExamResult({
       examId,
       studentId,
+      courseId: exam.courseId, // required by schema
       answers: gradedAnswers,
+      // score kept as earned points for backward-compat
       score: earnedPoints,
-      totalQuestions: exam.questions.length,
-      percentage: (earnedPoints / exam.questions.length) * 100,
+      totalPoints,
+      earnedPoints,
+      percentage: (totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0),
       timeSpent: timeSpent || 0,
       submittedAt: new Date()
     });
@@ -376,8 +380,9 @@ export const submitExam = async (req, res) => {
       message: "Exam submitted successfully",
       data: {
         score: earnedPoints,
-        totalQuestions: exam.questions.length,
-        percentage: Math.round((earnedPoints / exam.questions.length) * 100),
+        totalPoints,
+        earnedPoints,
+        percentage: Math.round((totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0)),
         timeSpent: timeSpent || 0,
         submittedAt: examResult.submittedAt,
         examTitle: exam.title,

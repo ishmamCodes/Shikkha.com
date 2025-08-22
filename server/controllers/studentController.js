@@ -8,6 +8,7 @@ import Appointment from '../models/Appointment.js';
 import Material from "../models/Material.js";
 import Educator from '../models/Educator.js';
 import Message from '../models/Message.js';
+import BookPurchase from '../models/BookPurchase.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -20,7 +21,24 @@ export const getDashboardStats = async (req, res) => {
   try {
     const studentId = req.user.id;
 
-    const enrolledCoursesCount = await Course.countDocuments({ students: studentId });
+    // Count courses from both direct enrollment and payment-based enrollment
+    const [directCoursesCount, enrollmentRecordsCount] = await Promise.all([
+      Course.countDocuments({ students: studentId }),
+      Enrollment.countDocuments({ studentId, status: 'active' })
+    ]);
+
+    // Get unique course IDs to avoid double counting
+    const [directCourses, enrollmentRecords] = await Promise.all([
+      Course.find({ students: studentId }).select('_id'),
+      Enrollment.find({ studentId, status: 'active' }).select('courseId')
+    ]);
+
+    const directCourseIds = new Set(directCourses.map(c => c._id.toString()));
+    const enrollmentCourseIds = new Set(enrollmentRecords.map(e => e.courseId.toString()));
+    
+    // Combine and deduplicate
+    const allCourseIds = new Set([...directCourseIds, ...enrollmentCourseIds]);
+    const totalEnrolledCourses = allCourseIds.size;
 
     const upcomingAppointmentsCount = await Appointment.countDocuments({
       studentId,
@@ -34,10 +52,12 @@ export const getDashboardStats = async (req, res) => {
       isDeleted: false,
     });
 
+    console.log(`Dashboard stats for student ${studentId}: ${totalEnrolledCourses} enrolled courses (${directCoursesCount} direct + ${enrollmentRecordsCount} paid)`);
+
     res.status(200).json({
       success: true,
       data: {
-        enrolledCourses: enrolledCoursesCount,
+        enrolledCourses: totalEnrolledCourses,
         upcomingAppointments: upcomingAppointmentsCount,
         unreadMessages: unreadMessagesCount,
       },
@@ -536,14 +556,99 @@ export const getStudentCourses = async (req, res) => {
   try {
     const studentId = req.user.id;
 
-    const courses = await Course.find({ students: studentId })
-      .populate({ path: "instructor", select: "fullName _id" })
-      .sort({ createdAt: -1 });
+    // Get courses from both direct enrollment (students array) and enrollment records
+    const [directCourses, enrollmentRecords] = await Promise.all([
+      Course.find({ students: studentId })
+        .populate({ path: "instructor", select: "fullName _id" })
+        .sort({ createdAt: -1 }),
+      Enrollment.find({ studentId, status: 'active' })
+        .populate({
+          path: 'courseId',
+          populate: { path: 'instructor', select: 'fullName _id' }
+        })
+        .sort({ createdAt: -1 })
+    ]);
+
+    // Combine and deduplicate courses
+    const courseMap = new Map();
+    
+    // Add direct courses
+    directCourses.forEach(course => {
+      courseMap.set(course._id.toString(), {
+        ...course.toObject(),
+        enrollmentStatus: 'enrolled'
+      });
+    });
+    
+    // Add enrollment-based courses
+    enrollmentRecords.forEach(enrollment => {
+      if (enrollment.courseId) {
+        courseMap.set(enrollment.courseId._id.toString(), {
+          ...enrollment.courseId.toObject(),
+          enrollmentStatus: 'enrolled',
+          enrollmentDate: enrollment.createdAt
+        });
+      }
+    });
+
+    const courses = Array.from(courseMap.values());
+    console.log(`Found ${courses.length} enrolled courses for student ${studentId}`);
 
     res.status(200).json({ success: true, data: courses });
   } catch (err) {
     console.error("[getStudentCourses]", err);
     res.status(500).json({ success: false, message: "Failed to fetch courses" });
+  }
+};
+
+// New endpoint: Get student purchases
+export const getStudentPurchases = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    // Get book purchases from BookPurchase records
+    const bookPurchases = await BookPurchase.find({ studentId })
+      .populate('bookId', 'title author price coverImage')
+      .sort({ createdAt: -1 });
+
+    // Deduplicate by bookId: aggregate quantity and keep latest purchase date/status
+    const mapByBook = new Map();
+    for (const p of bookPurchases) {
+      const bId = p.bookId?._id?.toString();
+      if (!bId) continue;
+      const existing = mapByBook.get(bId);
+      const latestDate = existing ? (p.createdAt > existing.purchaseDate ? p.createdAt : existing.purchaseDate) : p.createdAt;
+      const aggQuantity = (existing?.quantity || 0) + (p.quantity || 1);
+      // Status: if any is 'pending', mark pending, else prefer the most recent status
+      const status = existing?.status === 'pending' || p.status === 'pending' ? 'pending' : (p.createdAt >= (existing?.purchaseDate || 0) ? p.status : existing?.status || p.status);
+      const totalAmount = (existing?.totalAmount || 0) + (p.amount || 0);
+
+      mapByBook.set(bId, {
+        _id: existing?._id || p._id,
+        bookId: p.bookId?._id,
+        title: p.bookId?.title,
+        author: p.bookId?.author,
+        // Use consistent unit price from book model; also include totalAmount for reference
+        price: p.bookId?.price ?? p.amount, // unit price for display
+        totalAmount,
+        quantity: aggQuantity,
+        status,
+        deliveryStatus: status,
+        purchaseDate: latestDate,
+        shippingInfo: p.shippingInfo || existing?.shippingInfo,
+        coverImage: p.bookId?.coverImage || '',
+        // Keep thumbnailUrl for backward compatibility (same as coverImage)
+        thumbnailUrl: p.bookId?.coverImage || ''
+      });
+    }
+
+    const purchases = Array.from(mapByBook.values());
+    console.log(`Found ${bookPurchases.length} raw purchases; returning ${purchases.length} unique books for student ${studentId}`);
+
+    res.status(200).json({ success: true, data: purchases });
+  } catch (err) {
+    console.error("[getStudentPurchases]", err);
+    res.status(500).json({ success: false, message: "Failed to fetch purchases" });
   }
 };
 

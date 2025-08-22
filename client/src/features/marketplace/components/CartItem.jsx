@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
 
 const CartItem = ({ item, onUpdateQuantity, onRemoveItem }) => {
-  const { book, quantity, price } = item;
+  // Support both shapes: { book: {...} } and { bookId: {...} }
+  const book = item.book || item.bookId;
+  const quantity = item.quantity;
+  const price = item.price ?? (book?.price ?? 0);
 
   if (!book) {
     // This can happen if a book is deleted but still in a user's cart.
@@ -20,10 +23,15 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem }) => {
 
   return (
     <div className="flex items-center p-4 border-b last:border-b-0">
-      <img 
-        src={book.coverImage || 'https://via.placeholder.com/100x150.png?text=Book'}
+      <img
+        src={(() => {
+          const img = book.coverImage || book.thumbnailUrl || '';
+          if (!img) return 'https://via.placeholder.com/100x150.png?text=Book';
+          return img.startsWith('/') ? `http://localhost:4000${img}` : img;
+        })()}
         alt={book.title}
         className="w-20 h-30 object-cover rounded-md mr-4"
+        onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100x150.png?text=Book'; }}
       />
       <div className="flex-grow">
         <Link to={`/library/${book._id}`} className="font-semibold hover:text-blue-600">

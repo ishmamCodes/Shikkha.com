@@ -2,6 +2,7 @@ import Evaluation from "../models/Evaluation.js";
 import Course from "../models/Course.js";
 import Educator from "../models/Educator.js";
 import Student from "../models/Student.js";
+import Enrollment from "../models/Enrollment.js";
 
 // Get evaluations for a specific educator
 export const getEducatorEvaluations = async (req, res) => {
@@ -121,7 +122,13 @@ export const createEvaluation = async (req, res) => {
     }
 
     // Check if student is enrolled in the course
-    if (!course.students.includes(studentId)) {
+    // Allow either direct enrollment (Course.students) or paid enrollment (Enrollment record)
+    const isDirectEnrolled = (course.students || []).some(id => String(id) === String(studentId));
+    let isPaidEnrolled = false;
+    if (!isDirectEnrolled) {
+      isPaidEnrolled = await Enrollment.exists({ courseId, studentId, status: 'active' });
+    }
+    if (!isDirectEnrolled && !isPaidEnrolled) {
       return res.status(403).json({ success: false, message: "Student not enrolled in this course" });
     }
 
@@ -221,8 +228,9 @@ const calculateEducatorStats = async (educatorId) => {
     const totalRating = evaluations.reduce((sum, evaluation) => sum + evaluation.rating, 0);
     const overallAverage = (totalRating / evaluations.length).toFixed(1);
 
-    // Calculate per-course averages
-    const courseGroups = evaluations.reduce((groups, evaluation) => {
+    // Calculate per-course averages (skip evaluations with missing course ref)
+    const withCourse = evaluations.filter(ev => ev.courseId);
+    const courseGroups = withCourse.reduce((groups, evaluation) => {
       const courseId = evaluation.courseId._id.toString();
       if (!groups[courseId]) {
         groups[courseId] = {

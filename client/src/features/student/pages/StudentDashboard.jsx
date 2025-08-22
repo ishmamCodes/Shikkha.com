@@ -15,6 +15,8 @@ import ExamAttemptPage from '../../../pages/student/ExamAttemptPage.jsx';
 import ExamResultPage from '../../../pages/student/ExamResultPage.jsx';
 import StudentGradesPage from '../../../pages/student/GradesPage.jsx';
 import EvaluationsPage from '../../../pages/student/EvaluationsPage.jsx';
+import MyBooksPage from './MyBooksPage.jsx';
+import EnrolledCoursesPage from './EnrolledCoursesPage.jsx';
 import logo from '../../../assets/logo.png';
 
 const StudentDashboard = () => {
@@ -53,6 +55,7 @@ const StudentDashboard = () => {
         <div className="p-6">
           <Routes>
             <Route index element={<DashboardHome />} />
+            <Route path="enrolled-courses" element={<EnrolledCoursesPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="schedule" element={<SchedulePage />} />
             <Route path="materials" element={<MaterialsPage />} />
@@ -62,6 +65,7 @@ const StudentDashboard = () => {
             <Route path="exams/:examId/result" element={<ExamResultPage />} />
             <Route path="grades" element={<StudentGradesPage />} />
             <Route path="evaluations" element={<EvaluationsPage />} />
+            <Route path="books" element={<MyBooksPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="materials/:courseId" element={<CourseMaterialsPage />} />
           </Routes>

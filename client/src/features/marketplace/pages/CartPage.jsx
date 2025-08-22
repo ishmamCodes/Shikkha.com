@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import studentApi from '../../student/services/studentApi';
+import ShippingForm from '../../../components/ShippingForm';
 import CartItem from '../components/CartItem';
 import { FaShoppingCart, FaCreditCard } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 const CartPage = () => {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [showShippingForm, setShowShippingForm] = useState(false);
 
   useEffect(() => {
     fetchCart();
   }, []);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 
   const fetchCart = async () => {
     setLoading(true);
@@ -27,7 +33,8 @@ const CartPage = () => {
         return;
       }
       
-      const response = await axios.get('/api/marketplace/cart', {
+      // Use absolute API base to avoid proxy-related ERR_NETWORK
+      const response = await axios.get(`${API_BASE_URL}/marketplace/cart`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -35,7 +42,35 @@ const CartPage = () => {
       });
       
       if (response.data.success) {
-        setCart(response.data.cart);
+        const newCart = response.data.cart;
+        setCart(newCart);
+
+        // After loading cart, remove items that the user already purchased
+        try {
+          const purchasesResp = await studentApi.getPurchases();
+          const purchasedIds = new Set(
+            (purchasesResp?.data || []).map(p => p.book?._id).filter(Boolean)
+          );
+
+          const itemsToRemove = (newCart.items || []).filter(it => purchasedIds.has(it.bookId?._id));
+          if (itemsToRemove.length > 0) {
+            const token2 = localStorage.getItem('token');
+            // Optimistically update UI first
+            const remaining = newCart.items.filter(it => !purchasedIds.has(it.bookId?._id));
+            setCart({ ...newCart, items: remaining, totalAmount: remaining.reduce((s, it) => s + (it.bookId?.price || 0) * it.quantity, 0) });
+            // Fire-and-forget deletes
+            itemsToRemove.forEach(async (it) => {
+              try {
+                await axios.delete(`${API_BASE_URL}/marketplace/cart/items/${it._id}` , {
+                  headers: { 'Authorization': `Bearer ${token2}`, 'Content-Type': 'application/json' }
+                });
+              } catch (_) { /* ignore */ }
+            });
+          }
+        } catch (e) {
+          // If purchases call fails, ignore and keep cart
+          console.warn('Skip purchased removal, purchases fetch failed:', e?.message || e);
+        }
       }
     } catch (error) {
       console.error('Error fetching cart:', error);
@@ -49,7 +84,7 @@ const CartPage = () => {
     if (quantity < 1) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`/api/marketplace/cart/items/${itemId}`, 
+      const response = await axios.put(`${API_BASE_URL}/marketplace/cart/items/${itemId}`, 
         { quantity },
         {
           headers: {
@@ -71,7 +106,7 @@ const CartPage = () => {
   const handleRemoveItem = async (itemId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`/api/marketplace/cart/items/${itemId}`, {
+      const response = await axios.delete(`${API_BASE_URL}/marketplace/cart/items/${itemId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -87,27 +122,58 @@ const CartPage = () => {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.role !== 'student') {
+      toast.error('Please log in as a student to proceed with checkout');
+      return;
+    }
+    setShowShippingForm(true);
+  };
+
+  const handleShippingSubmit = async (shippingInfo) => {
     setCheckingOut(true);
     try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const studentId = user?._id || user?.id;
+      
+      if (!studentId) {
+        toast.error('Please log in to proceed with checkout');
+        return;
+      }
+
+      // Store shipping info for later use
+      localStorage.setItem('cart_shipping_info', JSON.stringify(shippingInfo));
+
+      // Create Stripe checkout session for multiple books
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/marketplace/checkout', {}, {
+      const response = await axios.post('http://localhost:4000/api/payments/create-checkout-session', {
+        type: 'cart',
+        studentId: studentId,
+        shippingInfo: shippingInfo
+      }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      if (response.data.success) {
-        toast.success(response.data.message);
-        setCart(null); // Clear cart on successful checkout
+
+      if (response.data.success && response.data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.url;
       } else {
-        toast.error(response.data.message || 'Checkout failed');
+        toast.error('Failed to create checkout session');
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error('An error occurred during checkout.');
+      if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || 'Invalid request. Please check your cart.');
+      } else {
+        toast.error('An error occurred during checkout.');
+      }
     } finally {
       setCheckingOut(false);
+      setShowShippingForm(false);
     }
   };
 
@@ -168,18 +234,32 @@ const CartPage = () => {
                 <span>Total</span>
                 <span>${cart.totalAmount.toFixed(2)}</span>
               </div>
-              <button 
+              <button
                 onClick={handleCheckout}
                 disabled={checkingOut}
-                className="w-full mt-6 bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:bg-purple-300 flex items-center justify-center gap-2"
+                className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                <FaCreditCard />
+                <FaCreditCard className="mr-2" />
                 {checkingOut ? 'Processing...' : 'Proceed to Checkout'}
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {showShippingForm && (
+        <ShippingForm
+          title="Cart Checkout - Shipping Information"
+          items={cart.items.map(item => ({
+            title: item.bookId.title,
+            price: item.bookId.price,
+            quantity: item.quantity
+          }))}
+          onSubmit={handleShippingSubmit}
+          onClose={() => setShowShippingForm(false)}
+          loading={checkingOut}
+        />
+      )}
     </div>
   );
 };

@@ -25,6 +25,8 @@ import marketplaceRoutes from "./routes/marketplace/index.js";
 import appointmentRoutes from "./routes/appointments.js";
 import examRoutes from "./routes/exams.js";
 import evaluationRoutes from "./routes/evaluations.js";
+import paymentRoutes from "./routes/payments.js";
+import adminRoutes from "./routes/admin.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -38,7 +40,7 @@ const corsOptions = {
   // Reflect the request Origin (enables any localhost port like 5176 during dev)
   origin: true,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200,
 };
@@ -60,6 +62,9 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
+
+// Stripe webhook endpoint needs raw body, so add it before JSON parsing
+app.use('/api/payments/stripe/webhook', express.raw({type: 'application/json'}));
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
@@ -85,6 +90,8 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/evaluations", evaluationRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/logo.jpg', express.static('client/public/logo.jpg'));
 

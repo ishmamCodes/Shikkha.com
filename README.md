@@ -32,6 +32,36 @@ PORT=5000
 STRIPE_SECRET_KEY=your_stripe_key   # if using payments
 ```
 
+## Stripe Test Mode Setup
+
+1. **Install SDKs**
+   - Server (`server/`): `npm install stripe`
+   - Client (`client/`): `npm install @stripe/stripe-js @stripe/react-stripe-js`
+
+2. **Get Test API Keys**
+   - Visit https://dashboard.stripe.com/test/apikeys
+   - Copy your keys: `sk_test_...` (Secret), `pk_test_...` (Publishable)
+
+3. **Configure server/.env**
+   - Set:
+     ```env
+     STRIPE_SECRET_KEY=sk_test_your_key
+     STRIPE_PUBLISHABLE_KEY=pk_test_your_key
+     CLIENT_URL=http://localhost:5173
+     ```
+
+4. **How Payments Work (Unified Checkout)**
+  - Create Checkout Session (courses or books): `POST /api/payments/create-checkout-session` with payload:
+    ```json
+    { "type": "course" | "book", "itemId": "...", "studentId": "..." }
+    ```
+  - Backend responds with `{ success, url, paymentId }`; redirect the browser to `url`.
+  - Webhook handles `checkout.session.completed` at `POST /api/payments/stripe/webhook` to finalize enrollments/purchases.
+  - Client has redirect routes: `/payment-success` and `/payment-cancel`.
+
+5. **Test Card**
+   - Use `4242 4242 4242 4242`, any future expiry, any CVC, any ZIP.
+
 ## Run
 - Start the server (from `server/`):
   ```bash
@@ -45,3 +75,19 @@ STRIPE_SECRET_KEY=your_stripe_key   # if using payments
   ```
 
 By default, client runs on a Vite port (e.g., 5173) and server on `PORT` (default 5000).
+
+## Appointments & Exams (Highlights)
+- Educators can create available time slots and manage appointments.
+- Exams can be created per course with MCQ questions and auto-grading.
+- Student-side features include taking exams with timers, immediate results, and submitting course evaluations.
+
+Key API endpoints:
+- Appointments: `POST /api/appointments/slots`, `GET /api/appointments/slots/:educatorId`
+- Exams: `POST /api/exams`, `GET /api/exams?studentId=...`, `POST /api/exams/submit`, `GET /api/students/:id/grades`
+
+## CORS
+Server uses a shared `corsOptions` applied to both `app.use` and `app.options`, with a small middleware to set headers and short-circuit `OPTIONS`.
+
+## Dependencies Status
+- No new dependencies required beyond those listed in `server/package.json` and `client/package.json` (Stripe SDKs already included).
+- Run `npm install` in both `server/` and `client/` after pulling updates.

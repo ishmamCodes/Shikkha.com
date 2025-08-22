@@ -51,6 +51,55 @@ const CoursesPage = () => {
     fetchCoursesAndEnrollments();
   }, [searchParams]);
 
+  // Listen for enrollment updates and refresh on focus
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'lastEnrollmentUpdate') {
+        // Refresh enrolled courses when enrollment is updated
+        const fetchEnrollments = async () => {
+          try {
+            const enrolledResponse = await studentApi.getEnrolledCourses();
+            if (enrolledResponse.success) {
+              const enrolledIds = new Set(enrolledResponse.data.map(course => course._id));
+              setEnrolledCourseIds(enrolledIds);
+              console.log('Refreshed enrolled course IDs:', Array.from(enrolledIds));
+            }
+          } catch (error) {
+            console.error('Error refreshing enrollments:', error);
+          }
+        };
+        fetchEnrollments();
+      }
+    };
+
+    const handleFocus = () => {
+      // Check if enrollment was updated recently (within last 30 seconds)
+      const lastUpdate = localStorage.getItem('lastEnrollmentUpdate');
+      if (lastUpdate && Date.now() - parseInt(lastUpdate) < 30000) {
+        const fetchEnrollments = async () => {
+          try {
+            const enrolledResponse = await studentApi.getEnrolledCourses();
+            if (enrolledResponse.success) {
+              const enrolledIds = new Set(enrolledResponse.data.map(course => course._id));
+              setEnrolledCourseIds(enrolledIds);
+              console.log('Refreshed enrolled course IDs on focus:', Array.from(enrolledIds));
+            }
+          } catch (error) {
+            console.error('Error refreshing enrollments:', error);
+          }
+        };
+        fetchEnrollments();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const handleFilterChange = (filters) => {
     setSearchParams(filters);
   };

@@ -251,15 +251,27 @@ export const getEducatorAppointments = async (req, res) => {
 export const deleteAppointmentSlot = async (req, res) => {
   try {
     const { id } = req.params;
+    const { user } = req;
 
     const slot = await AppointmentSlot.findById(id);
     if (!slot) {
       return res.status(404).json({ success: false, message: "Appointment slot not found" });
     }
 
-    // Check if slot is booked
+    // Security check: Only admin or the slot's owner can delete
+    if (user.role !== 'admin' && slot.educatorId.toString() !== user.id) {
+        return res.status(403).json({ success: false, message: "Forbidden: You cannot delete this slot" });
+    }
+
+    // If slot is booked, handle differently based on role
     if (slot.status === 'booked') {
-      return res.status(400).json({ success: false, message: "Cannot delete booked appointment slot" });
+      if (user.role === 'admin') {
+        // Admin can delete a booked slot, which also deletes the appointment
+        await Appointment.deleteOne({ educatorId: slot.educatorId, datetime: slot.slot });
+      } else {
+        // Non-admins cannot delete a booked slot
+        return res.status(400).json({ success: false, message: "Cannot delete a booked appointment slot. Please cancel the appointment first." });
+      }
     }
 
     await AppointmentSlot.findByIdAndDelete(id);
