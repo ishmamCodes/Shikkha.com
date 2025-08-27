@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { uploadMaterial, getEducatorMaterials, deleteMaterial, updateMaterial } from '../../../api/materialApi.js';
 import { getEducatorCourses } from '../services/educatorApi.js';
+import { useUser } from '../../../context/UserContext';
 import { toast } from 'react-hot-toast';
 
 const MaterialsPage = () => {
+  const { user } = useUser();
   const [materials, setMaterials] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,8 @@ const MaterialsPage = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await getEducatorCourses();
+      if (!user?._id) return;
+      const response = await getEducatorCourses(user._id);
       setCourses(response.courses || []);
     } catch (error) {
       console.error('Error fetching courses:', error);

@@ -147,6 +147,12 @@ const educatorApi = {
   }
 };
 
+// Export individual functions for named imports
+export const getEducatorCourses = async (educatorId) => {
+  const { data } = await api.get(`/courses/educator/${educatorId}`);
+  return data;
+};
+
 export default educatorApi;
 
 
