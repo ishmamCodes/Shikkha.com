@@ -57,7 +57,7 @@ const CoursesPage = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/courses');
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/courses`);
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -69,7 +69,7 @@ const CoursesPage = () => {
   const openDetails = async (course) => {
     try {
       // Optionally refetch full details
-      const res = await axios.get(`/api/courses/${course._id}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/courses/${course._id}`);
       setDetailsCourse(res.data || course);
     } catch (e) {
       // Fallback to given course if fetch fails

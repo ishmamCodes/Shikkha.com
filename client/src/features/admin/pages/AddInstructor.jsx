@@ -50,7 +50,7 @@ const AddInstructor = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/educators', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/educators`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -100,7 +100,7 @@ const AddInstructor = () => {
   const fetchExistingInstructors = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/instructors', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/instructors`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setExistingInstructors(Array.isArray(response.data) ? response.data : []);
@@ -113,7 +113,7 @@ const AddInstructor = () => {
     try {
       setLoadingSlots(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/appointments/slots/${educatorId}`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/appointments/slots/${educatorId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAppointmentSlots(response.data?.data || []);

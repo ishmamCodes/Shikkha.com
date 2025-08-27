@@ -3,7 +3,7 @@ const API_BASE_URL = 'https://shikkha-com.onrender.com';
 // Get completed courses for evaluation
 export const getCompletedCourses = async (studentId) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_BASE_URL}/students/${studentId}/completed-courses`, {
+  const response = await fetch(`${API_BASE_URL}/api/students/${studentId}/completed-courses`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',

@@ -79,7 +79,7 @@ const Messenger = () => {
       return;
     }
     try {
-      const res = await axios.get(`/api/messages/search?query=${searchQuery}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/messages/search?query=${searchQuery}`);
       setSearchResults(res.data);
     } catch (error) {
       console.error("Search error:", error);
@@ -91,7 +91,7 @@ const Messenger = () => {
     try {
       if (selectedUser && user && token) {
         const res = await axios.get(
-          `/api/messages/conversation/${user._id}/${selectedUser._id}`
+          `${import.meta.env.VITE_API_BASE_URL}/api/messages/conversation/${user._id}/${selectedUser._id}`
         );
         setMessages(res.data);
         
@@ -106,7 +106,7 @@ const Messenger = () => {
   const fetchInbox = async () => {
     try {
       if (!user || !token) return;
-      const res = await axios.get('/api/messages/inbox');
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/messages/inbox`);
       setInbox(res.data || []);
       // Auto-select first conversation if none selected
       if ((!selectedUser || !selectedUser._id) && res.data && res.data.length > 0) {

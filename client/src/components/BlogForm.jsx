@@ -24,7 +24,7 @@ const BlogForm = ({ onPostSubmit }) => {
     form.append('content', content);
     if (image) form.append('image', image);
 
-    const res = await fetch('http://localhost:5000/api/blogs', {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/blogs`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: form,

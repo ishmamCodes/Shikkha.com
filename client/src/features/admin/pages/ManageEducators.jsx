@@ -28,7 +28,7 @@ const ManageEducators = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/educators', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/educators`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

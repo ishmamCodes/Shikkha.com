@@ -30,7 +30,7 @@ const ManageBlogs = () => {
     try {
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
-      const response = await axios.get('/api/blogs', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/blogs`, {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       const blogData = Array.isArray(response.data) ? response.data : [];

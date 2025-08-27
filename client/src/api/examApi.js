@@ -3,7 +3,7 @@ const API_BASE_URL = 'https://shikkha-com.onrender.com';
 // Get available exams for a student (based on enrolled courses)
 export const getAvailableExams = async (studentId) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_BASE_URL}/exams?studentId=${studentId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/exams?studentId=${studentId}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',

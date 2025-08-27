@@ -26,12 +26,12 @@ const WebsiteAnalytics = () => {
       
       // Fetch all analytics data in parallel
       const [studentsRes, educatorsRes, coursesRes, booksRes, blogsRes, ordersRes] = await Promise.all([
-        axios.get('/api/students/', { headers }).catch(() => ({ data: [] })),
-        axios.get('/api/educators', { headers }).catch(() => ({ data: [] })),
-        axios.get('/api/courses', { headers }).catch(() => ({ data: [] })),
-        axios.get('/api/marketplace/books', { headers }).catch(() => ({ data: { books: [] } })),
-        axios.get('/api/blogs', { headers }).catch(() => ({ data: [] })),
-        axios.get('/api/marketplace/orders', { headers }).catch(() => ({ data: [] }))
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/students/`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/educators`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/courses`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/marketplace/books`, { headers }).catch(() => ({ data: { books: [] } })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/blogs`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/marketplace/orders`, { headers }).catch(() => ({ data: [] }))
       ]);
 
       const students = Array.isArray(studentsRes.data) ? studentsRes.data : [];

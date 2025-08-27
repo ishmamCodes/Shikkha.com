@@ -49,7 +49,7 @@ const ManageBooks = () => {
     try {
       setLoading(true);
       const adminToken = localStorage.getItem('adminToken');
-      const response = await axios.get('/api/marketplace/books', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/marketplace/books`, {
         headers: {
           'Authorization': `Bearer ${adminToken}`,
           'Content-Type': 'application/json'
