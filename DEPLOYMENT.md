@@ -81,7 +81,8 @@ Copy the generated secrets - you'll need them for environment variables.
 2. **Build Settings**:
    - **Framework Preset**: Vite
    - **Root Directory**: `client`
-   - **Build Command**: `npm run build`
+   - **Install Command**: `npm install`
+   - **Build Command**: `npm install && npm run build`
    - **Output Directory**: `dist`
 
 3. **Environment Variables**:
