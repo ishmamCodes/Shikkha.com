@@ -10,7 +10,7 @@ import ManageCoursesPage from './ManageCoursesPage.jsx';
 import AppointmentsPage from './AppointmentsPage.jsx';
 import ExamsPage from './ExamsPage.jsx';
 import EvaluationsPage from './EvaluationsPage.jsx';
-import UploadMaterialsPage from './UploadMaterialsPage.jsx';
+import MaterialsPage from './MaterialsPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 
 const EducatorDashboard = () => {
@@ -37,7 +37,7 @@ const EducatorDashboard = () => {
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="exams" element={<ExamsPage />} />
           <Route path="evaluations" element={<EvaluationsPage />} />
-          <Route path="upload-materials" element={<UploadMaterialsPage />} />
+          <Route path="materials" element={<MaterialsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
         </div>

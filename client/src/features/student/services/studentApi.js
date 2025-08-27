@@ -92,13 +92,13 @@ const studentApi = {
   // Course Materials for enrolled students
   getCourseMaterials: async (courseId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get(`/api/students/courses/${courseId}/materials`);
+    const response = await api.get(`/api/materials/course/${courseId}`);
     return response.data;
   },
 
-  downloadCourseMaterial: async (courseId, materialId) => {
+  downloadCourseMaterial: async (materialId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get(`/api/students/courses/${courseId}/materials/${materialId}/download`, {
+    const response = await api.get(`/api/materials/download/${materialId}`, {
       responseType: 'blob'
     });
     const disposition = response.headers['content-disposition'] || '';

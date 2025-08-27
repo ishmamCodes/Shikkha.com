@@ -27,6 +27,7 @@ import examRoutes from "./routes/exams.js";
 import evaluationRoutes from "./routes/evaluations.js";
 import paymentRoutes from "./routes/payments.js";
 import adminRoutes from "./routes/admin.js";
+import materialRoutes from "./routes/materials.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -92,6 +93,7 @@ app.use("/api/exams", examRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/materials", materialRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/logo.jpg', express.static('client/public/logo.jpg'));
 

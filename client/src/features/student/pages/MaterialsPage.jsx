@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaFolderOpen, FaDownload, FaEye, FaBook, FaFileAlt, FaVideo, FaImage } from 'react-icons/fa';
 import studentApi from '../services/studentApi';
+import { downloadMaterial } from '../../../api/materialApi';
 import toast from 'react-hot-toast';
 
 const MaterialsPage = () => {
@@ -38,7 +39,8 @@ const MaterialsPage = () => {
 
   const renderPreviewContent = (material) => {
     if (!material) return null;
-    const url = material.fileUrl || material.url;
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+    const url = material.url ? `${API_BASE_URL}${material.url}` : null;
     const type = (material.fileType || '').toLowerCase();
     if (!url) return <div className="text-gray-600">No preview available.</div>;
 
@@ -63,7 +65,7 @@ const MaterialsPage = () => {
     try {
       const response = await studentApi.getCourseMaterials(courseId);
       if (response.success) {
-        setMaterials(response.data || []);
+        setMaterials(response.materials || []);
       } else {
         console.warn('Materials fetch failed:', response.message);
         setMaterials([]);
@@ -209,7 +211,7 @@ const MaterialsPage = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {material.fileUrl ? (
+                            {material.url ? (
                               <>
                                 <button
                                   onClick={() => openPreview(material)}
@@ -218,13 +220,43 @@ const MaterialsPage = () => {
                                 >
                                   <FaEye />
                                 </button>
-                                <a
-                                  href={`/api/students/courses/${selectedCourse._id}/materials/${material._id}/download`}
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+                                      const token = localStorage.getItem('token');
+                                      
+                                      const response = await fetch(`${API_BASE_URL}/api/materials/download/${material._id}`, {
+                                        method: 'GET',
+                                        headers: {
+                                          'Authorization': `Bearer ${token}`,
+                                        },
+                                      });
+
+                                      if (!response.ok) {
+                                        throw new Error('Download failed');
+                                      }
+
+                                      const blob = await response.blob();
+                                      const url = window.URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = material.title + (material.fileType || '');
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      window.URL.revokeObjectURL(url);
+                                      document.body.removeChild(a);
+                                      toast.success('Download started');
+                                    } catch (error) {
+                                      console.error('Download error:', error);
+                                      toast.error('Failed to download file');
+                                    }
+                                  }}
                                   className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                                   title="Download"
                                 >
                                   <FaDownload />
-                                </a>
+                                </button>
                               </>
                             ) : (
                               <span className="text-xs text-gray-400 px-2">No file</span>
@@ -253,14 +285,42 @@ const MaterialsPage = () => {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {selectedCourse && (
-                  <a
-                    href={`/api/students/courses/${selectedCourse._id}/materials/${previewMaterial._id}/download`}
-                    className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
-                  >
-                    Download
-                  </a>
-                )}
+                <button
+                  onClick={async () => {
+                    try {
+                      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+                      const token = localStorage.getItem('token');
+                      
+                      const response = await fetch(`${API_BASE_URL}/api/materials/download/${previewMaterial._id}`, {
+                        method: 'GET',
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                        },
+                      });
+
+                      if (!response.ok) {
+                        throw new Error('Download failed');
+                      }
+
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = previewMaterial.title + (previewMaterial.fileType || '');
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                      toast.success('Download started');
+                    } catch (error) {
+                      console.error('Download error:', error);
+                      toast.error('Failed to download file');
+                    }
+                  }}
+                  className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+                >
+                  Download
+                </button>
                 <button onClick={closePreview} className="px-3 py-1.5 text-sm border rounded hover:bg-gray-50">Close</button>
               </div>
             </div>
