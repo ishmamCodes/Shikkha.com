@@ -5,7 +5,7 @@ import { useUser } from '../../../context/UserContext';
 
 const ProfilePage = () => {
   const { user, updateUser } = useUser();
-  const SERVER_ORIGIN = 'http://localhost:4000';
+  const SERVER_ORIGIN = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
   const normalizeUrl = (url) => (url ? (url.startsWith('http') ? url : `${SERVER_ORIGIN}${url}`) : '');
   const [profile, setProfile] = useState({
     fullName: '',

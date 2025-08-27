@@ -40,7 +40,7 @@ const Blog = () => {
   const user = JSON.parse(localStorage.getItem("user"));
 
   // Configure axios defaults
-  axios.defaults.baseURL = 'http://localhost:4000';
+  axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   axios.defaults.withCredentials = true;
 
@@ -330,7 +330,7 @@ const Blog = () => {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.5 }}
-                      src={`http://localhost:4000/${blog.image}`}
+                      src={`${import.meta.env.VITE_API_BASE_URL}/${blog.image}`}
                       alt="Blog"
                       className="w-full max-h-96 object-contain rounded-lg mb-4 shadow-md border-2 border-indigo-100"
                     />

@@ -627,7 +627,7 @@ const AddInstructor = () => {
                 <div className="flex items-center mb-3">
                   {instructor.image ? (
                     <img
-                      src={instructor.image.startsWith('/') ? `http://localhost:4000${instructor.image}` : instructor.image}
+                      src={instructor.image.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${instructor.image}` : instructor.image}
                       alt={instructor.name}
                       className="w-12 h-12 rounded-full object-cover mr-3"
                       onError={(e) => {

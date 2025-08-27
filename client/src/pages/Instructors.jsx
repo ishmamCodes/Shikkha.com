@@ -103,7 +103,7 @@ const Instructors = () => {
       if (educatorId) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:4000/api/instructors/${educatorId}/evaluations-summary`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/instructors/${educatorId}/evaluations-summary`, {
             headers: {
               'Content-Type': 'application/json',
               ...(token && { 'Authorization': `Bearer ${token}` })
@@ -177,7 +177,7 @@ const Instructors = () => {
               <div className="w-full h-full rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center overflow-hidden">
                 {inst.image ? (
                   <img 
-                    src={inst.image.startsWith('/') ? `http://localhost:4000${inst.image}` : inst.image} 
+                    src={inst.image.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${inst.image}` : inst.image} 
                     alt={inst.name} 
                     className="w-full h-full rounded-full object-cover"
                     loading="lazy"

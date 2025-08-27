@@ -147,7 +147,7 @@ const CartPage = () => {
 
       // Create Stripe checkout session for multiple books
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:4000/api/payments/create-checkout-session', {
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/payments/create-checkout-session`, {
         type: 'cart',
         studentId: studentId,
         shippingInfo: shippingInfo

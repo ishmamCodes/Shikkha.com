@@ -116,7 +116,7 @@ const BookDetailsPage = () => {
               src={(() => {
                 const img = book.coverImage || book.thumbnailUrl || '';
                 if (!img) return 'https://via.placeholder.com/300x450.png?text=Book+Cover';
-                return img.startsWith('/') ? `http://localhost:4000${img}` : img;
+                return img.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${img}` : img;
               })()}
               alt={book.title}
               className="w-full h-auto object-cover rounded-lg shadow-md"

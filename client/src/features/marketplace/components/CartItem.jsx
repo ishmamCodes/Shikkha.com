@@ -27,7 +27,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem }) => {
         src={(() => {
           const img = book.coverImage || book.thumbnailUrl || '';
           if (!img) return 'https://via.placeholder.com/100x150.png?text=Book';
-          return img.startsWith('/') ? `http://localhost:4000${img}` : img;
+          return img.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${img}` : img;
         })()}
         alt={book.title}
         className="w-20 h-30 object-cover rounded-md mr-4"

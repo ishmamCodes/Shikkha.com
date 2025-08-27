@@ -5,7 +5,7 @@ const UserContext = createContext(null);
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  const SERVER_ORIGIN = 'http://localhost:4000';
+  const SERVER_ORIGIN = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
   const normalizeUser = (u) => {
     if (!u) return null;
     const avatar = u.avatarUrl;

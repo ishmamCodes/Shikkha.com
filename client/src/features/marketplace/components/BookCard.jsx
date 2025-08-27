@@ -18,7 +18,7 @@ const BookCard = ({ book, isPurchased = false }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4000/api/marketplace/cart/items', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/marketplace/cart/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ const BookCard = ({ book, isPurchased = false }) => {
       <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
         <div className="relative">
           <img 
-            src={book.coverImage ? (book.coverImage.startsWith('/') ? `http://localhost:4000${book.coverImage}` : book.coverImage) : 'https://via.placeholder.com/300x450.png?text=Book+Cover'}
+            src={book.coverImage ? (book.coverImage.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${book.coverImage}` : book.coverImage) : 'https://via.placeholder.com/300x450.png?text=Book+Cover'}
             alt={book.title}
             className="w-full h-48 object-cover"
             onError={(e) => {

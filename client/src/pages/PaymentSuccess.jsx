@@ -37,7 +37,7 @@ const PaymentSuccess = () => {
           if (token) {
             // First, trigger manual webhook processing
             console.log('🔄 Triggering manual webhook for session:', sessionId);
-            const webhookResponse = await fetch('http://localhost:4000/api/payments/trigger-webhook', {
+            const webhookResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/payments/trigger-webhook`, {
               method: 'POST',
               headers: { 
                 'Authorization': `Bearer ${token}`,
@@ -58,7 +58,7 @@ const PaymentSuccess = () => {
 
             if (paymentType === 'book' || paymentType === 'cart') {
               // Refresh purchases data
-              const response = await fetch('http://localhost:4000/api/students/purchases', {
+              const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/students/purchases`, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
               if (response.ok) {
@@ -69,7 +69,7 @@ const PaymentSuccess = () => {
               }
             } else {
               // Refresh enrolled courses data
-              const response = await fetch('http://localhost:4000/api/students/enrolled-courses', {
+              const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/students/enrolled-courses`, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
               if (response.ok) {

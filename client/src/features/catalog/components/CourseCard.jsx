@@ -48,7 +48,7 @@ const CourseCard = ({ course, isEnrolled = false, onViewDetails }) => {
   const getImageSrc = (url) => {
     if (!url) return '';
     if (/^https?:\/\//i.test(url)) return url;
-    const origin = 'http://localhost:4000';
+    const origin = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
     const path = url.startsWith('/') ? url : `/${url}`;
     return `${origin}${path}`;
   };
