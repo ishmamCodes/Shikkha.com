@@ -209,6 +209,25 @@ router.post("/:id/unenroll", authMiddleware, async (req, res) => {
 });
 
 /**
+ * Get courses by educator ID
+ */
+router.get("/educator/:educatorId", authMiddleware, async (req, res) => {
+  try {
+    const { educatorId } = req.params;
+    
+    const courses = await Course.find({ instructor: educatorId })
+      .populate("instructor", "fullName role")
+      .populate("students", "fullName")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, courses });
+  } catch (error) {
+    console.error("Error fetching educator courses:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch educator courses" });
+  }
+});
+
+/**
  * Create a new course (educators only)
  */
 router.post("/", authMiddleware, async (req, res) => {

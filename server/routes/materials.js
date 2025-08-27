@@ -8,7 +8,7 @@ import {
   updateMaterial,
   upload 
 } from '../controllers/materialController.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
