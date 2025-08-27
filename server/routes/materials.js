@@ -21,7 +21,7 @@ router.get('/educator', authMiddleware, getEducatorMaterials);
 // Get materials for a course (students)
 router.get('/course/:courseId', authMiddleware, getCourseMaterials);
 
-// Download material
+// Download material - must come before generic /:materialId routes
 router.get('/download/:materialId', authMiddleware, downloadMaterial);
 
 // Update material
