@@ -1,5 +1,4 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { UserProvider } from './context/UserContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -36,8 +35,7 @@ function App() {
   );
 
   return (
-    <UserProvider>
-      <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Navbar */}
       {!shouldHideLayout && <Navbar />}
       {/* Global Toaster */}
@@ -79,8 +77,7 @@ function App() {
 
       {/* Footer */}
       {!shouldHideLayout && <Footer />}
-      </div>
-    </UserProvider>
+    </div>
   );
 }
 
