@@ -16,10 +16,11 @@
     }
   ],
   "env": {
-    "VITE_API_BASE_URL": "@vite_api_base_url",
-    "VITE_API_URL": "@vite_api_url",
-    "VITE_STRIPE_PUBLISHABLE_KEY": "@vite_stripe_publishable_key",
-    "VITE_APP_NAME": "@vite_app_name",
-    "VITE_APP_VERSION": "@vite_app_version"
+    "VITE_NODE_ENV": "production"
+  },
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
   }
 }

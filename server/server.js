@@ -37,26 +37,8 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://shikkha_admin:Shikkha1
 
 // Enhanced CORS configuration
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // In development, allow any localhost
-    if (process.env.NODE_ENV === 'development') {
-      return callback(null, true);
-    }
-    
-    // In production, check against allowed origins
-    const allowedOrigins = process.env.CORS_ORIGINS 
-      ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-      : ['https://your-vercel-app.vercel.app'];
-    
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    callback(new Error('Not allowed by CORS'));
-  },
+  // Reflect the request Origin (enables any localhost port like 5176 during dev)
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -89,14 +71,10 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Session Middleware
 app.use(session({
-  secret: process.env.SESSION_SECRET || "shikkha_secret_key",
+  secret: "shikkha_secret_key", // Replace with a strong secret in production
   resave: false,
   saveUninitialized: true,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', // HTTPS in production
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+  cookie: { secure: false } // Set to true if HTTPS
 }));
 
 // Route Mounting

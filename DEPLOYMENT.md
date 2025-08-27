@@ -1,159 +1,163 @@
-# Shikkha.com Deployment Guide
+# Deployment Guide for Shikkha.com
 
-This guide covers deploying the Shikkha.com MERN stack application with:
-- **Backend**: Render
-- **Frontend**: Vercel  
+This guide covers deploying the Shikkha.com MERN stack application to production using Render (backend) and Vercel (frontend).
+
+## Architecture Overview
+
+- **Backend**: Node.js/Express API deployed on Render
+- **Frontend**: React/Vite app deployed on Vercel  
 - **Database**: MongoDB Atlas
+- **Payments**: Stripe integration
 
 ## Prerequisites
 
-1. MongoDB Atlas cluster set up and running
-2. Stripe account with API keys
-3. Render account
-4. Vercel account
-5. GitHub repository with your code
+1. **Accounts Required**:
+   - [Render](https://render.com) account
+   - [Vercel](https://vercel.com) account
+   - [MongoDB Atlas](https://cloud.mongodb.com) account
+   - [Stripe](https://stripe.com) account
 
-## Backend Deployment (Render)
+2. **Local Setup**:
+   ```bash
+   # Run the setup script
+   chmod +x scripts/deploy-setup.sh
+   ./scripts/deploy-setup.sh
+   ```
 
-### 1. Environment Variables Setup
+## Step 1: Database Setup (MongoDB Atlas)
 
-In your Render service dashboard, add these environment variables:
+1. Create a new cluster on MongoDB Atlas
+2. Create a database user with read/write permissions
+3. Whitelist your IP addresses (or use 0.0.0.0/0 for all IPs)
+4. Get your connection string (replace `<password>` with actual password)
 
-```bash
-# Database
-MONGO_URI=mongodb+srv://shikkha_admin:Shikkha123@cluster0.xrtd0cz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-MONGO_DB=shikkha
-
-# Server
-NODE_ENV=production
-PORT=10000
-
-# Security (Generate strong random strings)
-JWT_SECRET=your_super_strong_jwt_secret_key_minimum_32_characters_long
-SESSION_SECRET=your_super_strong_session_secret_key_minimum_32_characters_long
-
-# Stripe (Use your production keys)
-STRIPE_SECRET_KEY=sk_live_your_production_stripe_secret_key_here
-STRIPE_PUBLISHABLE_KEY=pk_live_your_production_stripe_publishable_key_here
-
-# Client URL (Update after Vercel deployment)
-CLIENT_URL=https://your-vercel-app.vercel.app
-
-# CORS Origins (Update after Vercel deployment)
-CORS_ORIGINS=https://your-vercel-app.vercel.app,https://shikkha-com.vercel.app
-```
-
-### 2. Deploy to Render
-
-1. Connect your GitHub repository
-2. Select the `server` folder as root directory
-3. Build Command: `npm install`
-4. Start Command: `npm start`
-5. Add all environment variables listed above
-6. Deploy
-
-## Frontend Deployment (Vercel)
-
-### 1. Environment Variables Setup
-
-In your Vercel project dashboard, add these environment variables:
+## Step 2: Generate Production Secrets
 
 ```bash
-# API Configuration (Update with your Render URL)
-VITE_API_BASE_URL=https://your-render-app.onrender.com/api
-VITE_API_URL=https://your-render-app.onrender.com/api
-
-# Stripe (Use publishable key - safe for frontend)
-VITE_STRIPE_PUBLISHABLE_KEY=pk_live_your_production_stripe_publishable_key_here
-
-# App Configuration
-VITE_APP_NAME=Shikkha.com
-VITE_APP_VERSION=1.0.0
+node scripts/generate-secrets.js
 ```
 
-### 2. Deploy to Vercel
+Copy the generated secrets - you'll need them for environment variables.
 
-1. Connect your GitHub repository
-2. Select the `client` folder as root directory
-3. Build Command: `npm run build`
-4. Output Directory: `dist`
-5. Add all environment variables listed above
-6. Deploy
+## Step 3: Backend Deployment (Render)
 
-## Post-Deployment Configuration
+1. **Connect Repository**:
+   - Go to Render dashboard
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Select the `server` folder as root directory
 
-### 1. Update Backend CORS
+2. **Configure Build Settings**:
+   - **Environment**: Node
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+   - **Root Directory**: `server`
 
-After Vercel deployment, update these environment variables in Render:
+3. **Environment Variables**:
+   Add these in Render dashboard:
+   ```
+   NODE_ENV=production
+   PORT=4000
+   MONGO_URI=your_mongodb_atlas_connection_string
+   MONGO_DB=shikkha
+   JWT_SECRET=your_generated_jwt_secret
+   SESSION_SECRET=your_generated_session_secret
+   STRIPE_SECRET_KEY=sk_live_your_stripe_secret_key
+   STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key
+   CLIENT_URL=https://your-vercel-app.vercel.app
+   CORS_ORIGINS=https://your-vercel-app.vercel.app
+   ```
 
+4. **Deploy**: Click "Create Web Service"
+
+## Step 4: Frontend Deployment (Vercel)
+
+1. **Connect Repository**:
+   - Go to Vercel dashboard
+   - Click "New Project"
+   - Import your GitHub repository
+   - Set root directory to `client`
+
+2. **Build Settings**:
+   - **Framework Preset**: Vite
+   - **Root Directory**: `client`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+
+3. **Environment Variables**:
+   Add these in Vercel dashboard:
+   ```
+   VITE_API_BASE_URL=https://your-render-app.onrender.com
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key
+   VITE_NODE_ENV=production
+   VITE_PAYMENT_SUCCESS_URL=https://your-vercel-app.vercel.app/payment-success
+   VITE_PAYMENT_CANCEL_URL=https://your-vercel-app.vercel.app/payment-cancel
+   ```
+
+4. **Deploy**: Click "Deploy"
+
+## Step 5: Configure Stripe Webhooks
+
+1. Go to Stripe Dashboard → Webhooks
+2. Add endpoint: `https://your-render-app.onrender.com/api/payments/stripe/webhook`
+3. Select events: `checkout.session.completed`
+4. Copy the webhook signing secret and add to Render environment variables:
+   ```
+   STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+   ```
+
+## Step 6: Update CORS Origins
+
+After deployment, update the backend CORS configuration:
+
+1. In Render dashboard, update `CORS_ORIGINS` environment variable with your actual Vercel URL
+2. Redeploy the backend service
+
+## Step 7: Verification
+
+Run the health check script:
 ```bash
-CLIENT_URL=https://your-actual-vercel-url.vercel.app
-CORS_ORIGINS=https://your-actual-vercel-url.vercel.app
+BACKEND_URL=https://your-render-app.onrender.com FRONTEND_URL=https://your-vercel-app.vercel.app node scripts/health-check.js
 ```
-
-### 2. Update Frontend API URL
-
-After Render deployment, update these environment variables in Vercel:
-
-```bash
-VITE_API_BASE_URL=https://your-actual-render-url.onrender.com/api
-VITE_API_URL=https://your-actual-render-url.onrender.com/api
-```
-
-### 3. Test the Deployment
-
-1. Visit your Vercel URL
-2. Test user registration/login
-3. Test course enrollment
-4. Test payment functionality
-5. Test exam system
-6. Test appointment booking
-
-## Security Checklist
-
-- [ ] Generate strong JWT_SECRET (32+ characters)
-- [ ] Generate strong SESSION_SECRET (32+ characters)  
-- [ ] Use production Stripe keys
-- [ ] Update CORS_ORIGINS with actual domain
-- [ ] Verify MongoDB Atlas IP whitelist includes Render IPs
-- [ ] Test all API endpoints work with HTTPS
-- [ ] Verify session cookies work with secure flag
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **CORS Errors**: Ensure CORS_ORIGINS includes your exact Vercel domain
-2. **API Connection Failed**: Verify VITE_API_BASE_URL points to correct Render URL
-3. **Database Connection**: Check MongoDB Atlas IP whitelist and connection string
-4. **Stripe Webhooks**: Update webhook endpoint URL in Stripe dashboard
-5. **File Uploads**: Render has ephemeral storage - consider cloud storage for production
+1. **CORS Errors**: Ensure `CLIENT_URL` and `CORS_ORIGINS` match your Vercel domain exactly
+2. **Database Connection**: Verify MongoDB Atlas connection string and IP whitelist
+3. **Environment Variables**: Double-check all environment variables are set correctly
+4. **Build Failures**: Check build logs in Render/Vercel dashboards
 
 ### Logs
 
-- **Render**: Check service logs in Render dashboard
-- **Vercel**: Check function logs in Vercel dashboard
-- **MongoDB**: Check Atlas monitoring for connection issues
+- **Render**: View logs in the service dashboard
+- **Vercel**: Check function logs and build logs
+- **MongoDB**: Monitor connections in Atlas dashboard
 
-## Performance Optimization
+## Security Checklist
 
-1. Enable Render auto-deploy on git push
-2. Configure Vercel edge functions for better performance
-3. Set up MongoDB Atlas performance monitoring
-4. Consider CDN for static assets
-5. Implement Redis for session storage (optional)
+- [ ] All production secrets are unique and secure
+- [ ] Database user has minimal required permissions
+- [ ] CORS origins are restricted to your domains
+- [ ] Stripe webhook endpoint is secured
+- [ ] Environment variables are not exposed in client code
 
-## Monitoring
+## Maintenance
 
-1. Set up Render service monitoring
-2. Configure Vercel analytics
-3. Monitor MongoDB Atlas metrics
-4. Set up error tracking (Sentry recommended)
-5. Monitor Stripe webhook delivery
+### Updates
+1. Push changes to your GitHub repository
+2. Render and Vercel will auto-deploy from the main branch
+3. Monitor deployment status in respective dashboards
 
-## Backup Strategy
+### Monitoring
+- Set up uptime monitoring for both services
+- Monitor database performance in MongoDB Atlas
+- Track payment events in Stripe dashboard
 
-1. MongoDB Atlas automatic backups
-2. Regular code commits to GitHub
-3. Environment variables documented securely
-4. Database export scripts for critical data
+## Support
+
+For deployment issues:
+- Check the deployment logs first
+- Refer to platform documentation (Render, Vercel, MongoDB Atlas)
+- Ensure all environment variables are correctly configured
