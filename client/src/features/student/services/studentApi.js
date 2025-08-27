@@ -17,88 +17,88 @@ const createAuthenticatedRequest = () => {
 const studentApi = {
   getDashboardStats: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/students/dashboard-stats');
+    const response = await api.get('/api/students/dashboard-stats');
     return response.data;
   },
   // Student Dashboard APIs
   getSchedule: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/students/schedule');
+    const response = await api.get('/api/students/schedule');
     return response.data;
   },
 
   getGrades: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/students/grades');
+    const response = await api.get('/api/students/grades');
     return response.data;
   },
 
   getAppointments: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/students/appointments');
+    const response = await api.get('/api/students/appointments');
     return response.data;
   },
 
   cancelAppointment: async (appointmentId, reason = '') => {
     const api = createAuthenticatedRequest();
-    const response = await api.put(`/students/appointments/${appointmentId}/cancel`, { reason });
+    const response = await api.put(`/api/students/appointments/${appointmentId}/cancel`, { reason });
     return response.data;
   },
 
   // Profile APIs
   getProfile: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/students/profile');
+    const response = await api.get('/api/students/profile');
     return response.data;
   },
 
   updateProfile: async (payload) => {
     const api = createAuthenticatedRequest();
-    const response = await api.put('/students/profile', payload);
+    const response = await api.put('/api/students/profile', payload);
     return response.data;
   },
 
   // Catalog APIs
   getCourses: async (params = {}) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/catalog/courses', { params });
+    const response = await api.get('/api/catalog/courses', { params });
     return response.data;
   },
 
   getCourseById: async (courseId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get(`/catalog/courses/${courseId}`);
+    const response = await api.get(`/api/catalog/courses/${courseId}`);
     return response.data;
   },
 
   enrollInCourse: async (courseId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.post(`/students/courses/${courseId}/enroll`);
+    const response = await api.post(`/api/students/courses/${courseId}/enroll`);
     return response.data;
   },
 
   getEnrolledCourses: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/students/enrolled-courses');
+    const response = await api.get('/api/students/enrolled-courses');
     return response.data;
   },
 
   getCourseById: async (courseId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get(`/students/courses/${courseId}`);
+    const response = await api.get(`/api/students/courses/${courseId}`);
     return response.data;
   },
 
   // Course Materials for enrolled students
   getCourseMaterials: async (courseId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get(`/students/courses/${courseId}/materials`);
+    const response = await api.get(`/api/students/courses/${courseId}/materials`);
     return response.data;
   },
 
   downloadCourseMaterial: async (courseId, materialId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get(`/students/courses/${courseId}/materials/${materialId}/download`, {
+    const response = await api.get(`/api/students/courses/${courseId}/materials/${materialId}/download`, {
       responseType: 'blob'
     });
     const disposition = response.headers['content-disposition'] || '';
@@ -113,55 +113,55 @@ const studentApi = {
   // Marketplace APIs
   getBooks: async (params = {}) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/marketplace/books', { params });
+    const response = await api.get('/api/marketplace/books', { params });
     return response.data;
   },
 
   getBookById: async (bookId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.get(`/marketplace/books/${bookId}`);
+    const response = await api.get(`/api/marketplace/books/${bookId}`);
     return response.data;
   },
 
   getCart: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/marketplace/cart');
+    const response = await api.get('/api/marketplace/cart');
     return response.data;
   },
 
   updateCartItem: async (itemId, quantity) => {
     const api = createAuthenticatedRequest();
-    const response = await api.put(`/marketplace/cart/items/${itemId}`, { quantity });
+    const response = await api.put(`/api/marketplace/cart/items/${itemId}`, { quantity });
     return response.data;
   },
 
   removeCartItem: async (itemId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.delete(`/marketplace/cart/items/${itemId}`);
+    const response = await api.delete(`/api/marketplace/cart/items/${itemId}`);
     return response.data;
   },
 
   addToCart: async (bookId, qty = 1) => {
     const api = createAuthenticatedRequest();
-    const response = await api.post('/marketplace/cart/items', { bookId, qty });
+    const response = await api.post('/api/marketplace/cart/items', { bookId, qty });
     return response.data;
   },
 
   removeFromCart: async (itemId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.delete(`/marketplace/cart/items/${itemId}`);
+    const response = await api.delete(`/api/marketplace/cart/items/${itemId}`);
     return response.data;
   },
 
   updateCartItem: async (itemId, quantity) => {
     const api = createAuthenticatedRequest();
-    const response = await api.put(`/marketplace/cart/items/${itemId}`, { quantity });
+    const response = await api.put(`/api/marketplace/cart/items/${itemId}`, { quantity });
     return response.data;
   },
 
   removeCartItem: async (itemId) => {
     const api = createAuthenticatedRequest();
-    const response = await api.delete(`/marketplace/cart/items/${itemId}`);
+    const response = await api.delete(`/api/marketplace/cart/items/${itemId}`);
     return response.data;
   },
 
@@ -181,20 +181,20 @@ const studentApi = {
         'Content-Type': 'multipart/form-data'
       }
     });
-    const response = await api.post('/students/profile/avatar', formData);
+    const response = await api.post('/api/students/profile/avatar', formData);
     return response.data;
   },
 
   removeAvatar: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.delete('/students/profile/avatar');
+    const response = await api.delete('/api/students/profile/avatar');
     return response.data;
   },
 
   // Student purchases
   getPurchases: async () => {
     const api = createAuthenticatedRequest();
-    const response = await api.get('/students/purchases');
+    const response = await api.get('/api/students/purchases');
     return response.data;
   }
 };

@@ -34,7 +34,7 @@ const CartPage = () => {
       }
       
       // Use absolute API base to avoid proxy-related ERR_NETWORK
-      const response = await axios.get(`${API_BASE_URL}/marketplace/cart`, {
+      const response = await axios.get(`${API_BASE_URL}/api/marketplace/cart`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -61,7 +61,7 @@ const CartPage = () => {
             // Fire-and-forget deletes
             itemsToRemove.forEach(async (it) => {
               try {
-                await axios.delete(`${API_BASE_URL}/marketplace/cart/items/${it._id}` , {
+                await axios.delete(`${API_BASE_URL}/api/marketplace/cart/items/${it._id}` , {
                   headers: { 'Authorization': `Bearer ${token2}`, 'Content-Type': 'application/json' }
                 });
               } catch (_) { /* ignore */ }
@@ -84,7 +84,7 @@ const CartPage = () => {
     if (quantity < 1) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`${API_BASE_URL}/marketplace/cart/items/${itemId}`, 
+      const response = await axios.put(`${API_BASE_URL}/api/marketplace/cart/items/${itemId}`, 
         { quantity },
         {
           headers: {
@@ -106,7 +106,7 @@ const CartPage = () => {
   const handleRemoveItem = async (itemId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`${API_BASE_URL}/marketplace/cart/items/${itemId}`, {
+      const response = await axios.delete(`${API_BASE_URL}/api/marketplace/cart/items/${itemId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

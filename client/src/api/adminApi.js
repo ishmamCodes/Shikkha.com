@@ -6,7 +6,7 @@ const adminApi = {
   // Get sales summary for admin dashboard
   getSalesSummary: async () => {
     const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
-    const response = await axios.get(`${API_BASE_URL}/admin/sales`, {
+    const response = await axios.get(`${API_BASE_URL}/api/admin/sales`, {
       headers: {
         Authorization: `Bearer ${token}`
       }

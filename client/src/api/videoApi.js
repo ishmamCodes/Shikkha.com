@@ -14,10 +14,10 @@ API.interceptors.request.use((req) => {
 });
 
 // ✅ Upload video
-export const uploadVideo = (videoData) => API.post("/videos", videoData);
+export const uploadVideo = (videoData) => API.post("/api/videos", videoData);
 
 // ✅ Fetch all videos
 export const getVideos = async () => {
-  const { data } = await API.get("/videos");
+  const { data } = await API.get("/api/videos");
   return data;
 };

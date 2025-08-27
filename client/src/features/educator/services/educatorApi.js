@@ -11,67 +11,67 @@ api.interceptors.request.use((config) => {
 
 const educatorApi = {
   async getProfile(educatorUserId) {
-    const { data } = await api.get(`/educators/${educatorUserId}`);
+    const { data } = await api.get(`/api/educators/${educatorUserId}`);
     return data?.data;
   },
   async updateProfile(educatorUserId, payload) {
-    const { data } = await api.put(`/educators/${educatorUserId}`, payload);
+    const { data } = await api.put(`/api/educators/${educatorUserId}`, payload);
     return data?.data;
   },
   async updatePassword(educatorUserId, newPassword) {
-    const { data } = await api.put(`/educators/${educatorUserId}/password`, newPassword);
+    const { data } = await api.put(`/api/educators/${educatorUserId}/password`, newPassword);
     return data;
   },
   async requestEmailChange(userId, newEmail) {
-    const { data } = await api.post(`/educators/${userId}/email-change`, { newEmail });
+    const { data } = await api.post(`/api/educators/${userId}/email-change`, { newEmail });
     return data?.data;
   },
   async getMyEmailChangeRequests() {
-    const { data } = await api.get('/educators/me/email-change');
+    const { data } = await api.get('/api/educators/me/email-change');
     return data?.data || [];
   },
   async createCourse(payload) {
-    const { data } = await api.post('/courses', payload);
+    const { data } = await api.post('/api/courses', payload);
     return data?.data;
   },
   async updateCourse(courseId, payload) {
-    const { data } = await api.put(`/courses/${courseId}`, payload);
+    const { data } = await api.put(`/api/courses/${courseId}`, payload);
     return data?.data;
   },
   async deleteCourse(courseId) {
-    const { data } = await api.delete(`/courses/${courseId}`);
+    const { data } = await api.delete(`/api/courses/${courseId}`);
     return data;
   },
   async getCourseStudents(courseId) {
-    const { data } = await api.get(`/courses/${courseId}/students`);
+    const { data } = await api.get(`/api/courses/${courseId}/students`);
     return data?.data;
   },
   async removeStudent(courseId, studentId) {
-    const { data } = await api.delete(`/courses/${courseId}/students/${studentId}`);
+    const { data } = await api.delete(`/api/courses/${courseId}/students/${studentId}`);
     return data;
   },
   async getAppointments(educatorId) {
-    const { data } = await api.get(`/appointments/educator/${educatorId}`);
+    const { data } = await api.get(`/api/appointments/educator/${educatorId}`);
     return data?.data;
   },
   async updateAppointmentStatus(appointmentId, status, notes) {
-    const { data } = await api.patch(`/appointments/${appointmentId}`, { status, notes });
+    const { data } = await api.patch(`/api/appointments/${appointmentId}`, { status, notes });
     return data?.data;
   },
   async deleteAppointment(appointmentId) {
-    const { data } = await api.delete(`/appointments/${appointmentId}`);
+    const { data } = await api.delete(`/api/appointments/${appointmentId}`);
     return data;
   },
   async createAppointmentSlot(payload) {
-    const { data } = await api.post('/appointments/slots', payload);
+    const { data } = await api.post('/api/appointments/slots', payload);
     return data?.data;
   },
   async getAppointmentSlots(educatorId) {
-    const { data } = await api.get(`/appointments/slots/${educatorId}`);
+    const { data } = await api.get(`/api/appointments/slots/${educatorId}`);
     return data?.data;
   },
   async deleteAppointmentSlot(slotId) {
-    const { data } = await api.delete(`/appointments/slots/${slotId}`);
+    const { data } = await api.delete(`/api/appointments/slots/${slotId}`);
     return data;
   },
   async getMessages(studentId = null) {
@@ -98,7 +98,7 @@ const educatorApi = {
     return { ...data, avatarUrl: fullUrl };
   },
   async getCourseMaterials(courseId) {
-    const { data } = await api.get(`/courses/${courseId}/materials`);
+    const { data } = await api.get(`/api/courses/${courseId}/materials`);
     return data?.data;
   },
   async deleteMaterial(materialId) {
@@ -110,31 +110,31 @@ const educatorApi = {
     return data?.data;
   },
   async getEarnings(educatorId) {
-    const { data } = await api.get(`/educators/${educatorId}/earnings`);
+    const { data } = await api.get(`/api/educators/${educatorId}/earnings`);
     return data?.data;
   },
   async createExam(payload) {
-    const { data } = await api.post('/exams', payload);
+    const { data } = await api.post('/api/exams', payload);
     return data?.data;
   },
   async getEducatorExams(educatorId) {
-    const { data } = await api.get(`/exams/educator/${educatorId}`);
+    const { data } = await api.get(`/api/exams/educator/${educatorId}`);
     return data?.data;
   },
   async getCourseExams(courseId) {
-    const { data } = await api.get(`/exams/course/${courseId}`);
+    const { data } = await api.get(`/api/exams/course/${courseId}`);
     return data?.data;
   },
   async getExamById(examId) {
-    const { data } = await api.get(`/exams/${examId}?includeAnswers=true`);
+    const { data } = await api.get(`/api/exams/${examId}?includeAnswers=true`);
     return data?.data;
   },
   async updateExam(examId, payload) {
-    const { data } = await api.put(`/exams/${examId}`, payload);
+    const { data } = await api.put(`/api/exams/${examId}`, payload);
     return data?.data;
   },
   async deleteExam(examId) {
-    const { data } = await api.delete(`/exams/${examId}`);
+    const { data } = await api.delete(`/api/exams/${examId}`);
     return data;
   },
   async getEducatorEvaluations(educatorId) {

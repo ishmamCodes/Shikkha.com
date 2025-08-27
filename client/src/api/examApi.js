@@ -20,7 +20,7 @@ export const getAvailableExams = async (studentId) => {
 // Get exam by ID for attempt page
 export const getExamById = async (examId) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_BASE_URL}/exams/${examId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/exams/${examId}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ export const getExamById = async (examId) => {
 // Submit exam answers
 export const submitExam = async (examData) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_BASE_URL}/exams/submit`, {
+  const response = await fetch(`${API_BASE_URL}/api/exams/submit`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -56,7 +56,7 @@ export const submitExam = async (examData) => {
 // Get student grades
 export const getStudentGrades = async (studentId) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_BASE_URL}/students/${studentId}/grades`, {
+  const response = await fetch(`${API_BASE_URL}/api/students/${studentId}/grades`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
