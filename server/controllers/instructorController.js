@@ -25,6 +25,49 @@ export const listInstructors = async (req, res) => {
   }
 };
 
+// PUT /api/instructors/:id (admin)
+export const updateInstructor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, expertise, achievements, contact } = req.body || {};
+    let { image } = req.body || {};
+
+    const existing = await Instructor.findById(id);
+    if (!existing) return res.status(404).json({ message: 'Instructor not found' });
+
+    if (req.file) {
+      image = `/uploads/instructors/${req.file.filename}`;
+    }
+
+    if (typeof name === 'string') existing.name = name;
+    if (typeof expertise === 'string') existing.expertise = expertise;
+    if (typeof achievements === 'string') existing.achievements = achievements;
+    if (typeof contact === 'string') existing.contact = contact;
+    if (typeof image === 'string' && image.length > 0) existing.image = image;
+
+    await existing.save();
+    return res.status(200).json(existing);
+  } catch (e) {
+    console.error('[updateInstructor]', e);
+    return res.status(500).json({ message: 'Failed to update instructor' });
+  }
+};
+
+// DELETE /api/instructors/:id (admin)
+export const deleteInstructor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await Instructor.findById(id);
+    if (!existing) return res.status(404).json({ message: 'Instructor not found' });
+
+    await Instructor.findByIdAndDelete(id);
+    return res.status(200).json({ success: true, message: 'Instructor deleted' });
+  } catch (e) {
+    console.error('[deleteInstructor]', e);
+    return res.status(500).json({ message: 'Failed to delete instructor' });
+  }
+};
+
 // POST /api/instructors (admin)
 export const createInstructor = async (req, res) => {
   try {

@@ -12,6 +12,7 @@ import {
   enrollInCourse,
   getStudentCourses,
   getStudentCourseById,
+  getStudentPurchases,
   unenrollFromCourse,
   getStudentCourseMaterials,
   downloadStudentCourseMaterial,
@@ -19,6 +20,7 @@ import {
   updateStudentProfile,
   getStudentSchedule,
   getStudentGrades,
+  getCompletedCourses,
   uploadAvatar,
   removeAvatar,
   getDashboardStats,
@@ -27,6 +29,7 @@ import {
   activateStudent,
   deleteStudent
 } from '../controllers/studentController.js';
+import { getStudentGrades as getExamStudentGrades } from '../controllers/examsController.js';
 
 const router = express.Router();
 
@@ -55,6 +58,33 @@ router.put("/appointments/:appointmentId/cancel", authMiddleware, authorizeRole(
 // Schedule and Grades
 router.get("/schedule", authMiddleware, authorizeRole(["student", "admin"]), getStudentSchedule);
 router.get("/grades", authMiddleware, authorizeRole(["student", "admin"]), getStudentGrades);
+// New: explicit studentId grades for exam results
+router.get(
+  "/:studentId/grades",
+  authMiddleware,
+  authorizeRole(["student", "admin"]),
+  (req, res, next) => {
+    // Only allow self-access unless admin
+    if (req.user.role !== 'admin' && req.user.id !== req.params.studentId) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    return getExamStudentGrades(req, res, next);
+  }
+);
+
+// Completed courses for evaluations
+router.get(
+  "/:studentId/completed-courses",
+  authMiddleware,
+  authorizeRole(["student", "admin"]),
+  (req, res, next) => {
+    // Only allow self-access unless admin
+    if (req.user.role !== 'admin' && req.user.id !== req.params.studentId) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    return getCompletedCourses(req, res, next);
+  }
+);
 
 // Messaging
 router.get("/messages", authMiddleware, authorizeRole(["student", "admin"]), getStudentMessages);
@@ -68,6 +98,8 @@ router.get("/courses", authMiddleware, authorizeRole(["student", "admin"]), getS
 router.delete("/courses/:courseId/enroll", authMiddleware, authorizeRole(["student", "admin"]), unenrollFromCourse);
 // Alias for backward compatibility
 router.get("/enrolled-courses", authMiddleware, authorizeRole(["student", "admin"]), getStudentCourses);
+// Student purchases
+router.get("/purchases", authMiddleware, authorizeRole(["student", "admin"]), getStudentPurchases);
 // Course materials (student)
 router.get("/courses/:courseId/materials", authMiddleware, authorizeRole(["student", "admin"]), getStudentCourseMaterials);
 router.get("/courses/:courseId/materials/:materialId/download", authMiddleware, authorizeRole(["student", "admin"]), downloadStudentCourseMaterial);

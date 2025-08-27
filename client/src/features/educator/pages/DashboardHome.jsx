@@ -3,6 +3,7 @@ import educatorApi from '../services/educatorApi.js';
 
 const DashboardHome = () => {
   const [stats, setStats] = React.useState(null);
+  const [earnings, setEarnings] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
 
@@ -10,12 +11,21 @@ const DashboardHome = () => {
     let mounted = true;
     (async () => {
       try {
-        const data = await educatorApi.getStats();
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const educatorId = user._id || user.id;
+        
+        const [statsData, earningsData] = await Promise.all([
+          educatorApi.getStats(),
+          educatorId ? educatorApi.getEarnings(educatorId) : Promise.resolve({ totalEarnings: 0, totalSales: 0 })
+        ]);
+        
         if (!mounted) return;
-        setStats(data || null);
+        setStats(statsData || null);
+        setEarnings(earningsData || { totalEarnings: 0, totalSales: 0 });
       } catch (e) {
         if (!mounted) return;
-        setError('Failed to load stats');
+        setError('Failed to load dashboard data');
+        console.error('Dashboard error:', e);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -31,6 +41,11 @@ const DashboardHome = () => {
     pendingAppointments: 0,
     confirmedAppointments: 0,
   };
+  
+  // Override monthly earnings with actual payment data
+  if (earnings) {
+    totals.monthlyEarnings = earnings.totalEarnings || 0;
+  }
 
   const earningsTrend = stats?.charts?.earningsTrend || Array.from({ length: 6 }).map((_, i) => ({ month: i + 1, amount: 0 }));
   const enrollmentTrend = stats?.charts?.enrollmentTrend || Array.from({ length: 6 }).map((_, i) => ({ month: i + 1, count: 0 }));
@@ -44,8 +59,8 @@ const DashboardHome = () => {
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <StatCard title="Total Courses" value={totals.totalCourses} loading={loading} />
         <StatCard title="Total Students" value={totals.totalStudents} loading={loading} />
-        <StatCard title="Monthly Earnings" value={`$${totals.monthlyEarnings || 0}`} loading={loading} />
-        <StatCard title="Avg Rating" value={totals.averageRating} loading={loading} />
+        <StatCard title="Total Earnings" value={`$${(earnings?.totalEarnings || 0).toFixed(2)}`} loading={loading} color="text-green-600" />
+        <StatCard title="Course Sales" value={earnings?.totalSales || 0} loading={loading} color="text-blue-600" />
         <StatCard title="Pending Appts" value={totals.pendingAppointments} loading={loading} />
         <StatCard title="Confirmed Appts" value={totals.confirmedAppointments} loading={loading} />
       </div>
@@ -69,10 +84,10 @@ const DashboardHome = () => {
   );
 };
 
-const StatCard = ({ title, value, loading }) => (
+const StatCard = ({ title, value, loading, color = 'text-purple-800' }) => (
   <div className="p-4 rounded-xl bg-gradient-to-br from-white to-indigo-50 shadow-2xl border-2 border-indigo-200">
     <div className="text-sm text-gray-600">{title}</div>
-    <div className="text-2xl font-semibold text-purple-800">
+    <div className={`text-2xl font-semibold ${color}`}>
       {loading ? <span className="animate-pulse text-gray-400">...</span> : value}
     </div>
   </div>

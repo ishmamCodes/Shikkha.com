@@ -62,6 +62,11 @@ A comprehensive admin dashboard for managing the Shikkha.com MERN stack applicat
 - **Price Management:** View and track book pricing
 - **Category Organization:** Manage book categories and classifications
 
+#### 8. Appointments & Exams Oversight
+- **Appointment Slots**: Review/publish educator time slots (uses `isPublished` flag)
+- **Exam Insights**: View exams per instructor/course and results summaries
+- **Evaluations Summary**: Access instructor ratings overview
+
 ## Technical Implementation
 
 ### File Structure
@@ -100,6 +105,17 @@ The dashboard integrates with these backend endpoints:
 - `POST /api/instructors` - Create instructor cards
 - `PATCH /api/[resource]/[id]/[action]` - Update resource status
 - `DELETE /api/[resource]/[id]` - Delete resources
+
+Appointments & Exams related:
+- `GET /api/appointments/slots/:educatorId` - Review educator slots
+- `PATCH /api/appointments/slots/:slotId` - Approve/publish slot (if implemented)
+- `GET /api/exams/educator/:educatorId` - View educator exams
+- `GET /api/instructors/:id/evaluations-summary` - Ratings summary
+
+Payments (Stripe unified checkout):
+- `POST /api/payments/create-checkout-session` - Create checkout session (course/book)
+- `POST /api/payments/stripe/webhook` - Webhook (checkout.session.completed)
+  - Revenue sharing: 60% educator, 40% admin for courses
 
 ### Authentication Flow
 1. User navigates to `/admin/login`

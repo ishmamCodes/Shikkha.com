@@ -3,6 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiFilter, FiUser, FiClock, FiDollarSign, FiUsers, FiMessageSquare, FiBookOpen, FiStar, FiHeart } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { createCheckoutSession, enrollInFreeCourse } from '../api/checkoutApi';
 
 const CoursesPage = () => {
   const navigate = useNavigate();
@@ -126,21 +127,54 @@ const CoursesPage = () => {
   const performEnroll = async (courseId) => {
     try {
       setEnrollingCourseId(courseId);
-      const response = await axios.post(`/api/courses/${courseId}/enroll`);
-      // Update the courses list
-      setCourses(prevCourses =>
-        prevCourses.map(course =>
-          course._id === courseId ? response.data.course : course
-        )
-      );
+      const course = courses.find(c => c._id === courseId) || detailsCourse;
+      
+      if (!course) {
+        throw new Error('Course not found');
+      }
+
+      // Get student ID - try multiple possible fields
+      const studentId = user?.id || user?._id || localStorage.getItem('studentId');
+      if (!studentId) {
+        throw new Error('Student ID not found. Please log in again.');
+      }
+
+      console.log('Course enrollment:', { courseId, studentId, isPaid: course.isPaid, price: course.price });
+
+      // Check if course is free
+      if (!course.isPaid || course.price === 0) {
+        // Free course enrollment
+        const response = await enrollInFreeCourse(courseId, studentId);
+        showToast('Successfully enrolled in free course!', 'success');
+        
+        // Update the courses list
+        setCourses(prevCourses =>
+          prevCourses.map(c =>
+            c._id === courseId ? { ...c, enrolledCount: (c.enrolledCount || 0) + 1 } : c
+          )
+        );
+      } else {
+        // Paid course - redirect to Stripe checkout
+        console.log('Creating checkout session for paid course...');
+        const response = await createCheckoutSession('course', courseId, studentId);
+        console.log('Checkout response:', response);
+        
+        if (response.success && response.url) {
+          // Redirect to Stripe checkout
+          window.location.href = response.url;
+          return; // Don't continue with local state updates
+        } else {
+          throw new Error('Failed to create checkout session');
+        }
+      }
+      
       // If details modal is open for this course, sync it too
       if (detailsOpen && detailsCourse?._id === courseId) {
-        setDetailsCourse(response.data.course);
+        setDetailsCourse(prev => ({ ...prev, enrolledCount: (prev.enrolledCount || 0) + 1 }));
       }
-      showToast('Successfully enrolled in course!', 'success');
     } catch (error) {
       console.error('Error enrolling in course:', error);
-      showToast(error.response?.data?.error || 'Failed to enroll in course', 'error');
+      showToast(error.response?.data?.message || error.message || 'Failed to enroll in course', 'error');
     } finally {
       setEnrollingCourseId(null);
       setConfirmEnrollCourse(null);

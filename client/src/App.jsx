@@ -19,6 +19,8 @@ import CartPage from './features/marketplace/pages/CartPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute';
 import VideoList from './pages/VideoList.jsx';
 import VideoUpload from './pages/VideoUpload.jsx';
+import PaymentSuccess from './pages/PaymentSuccess.jsx';
+import PaymentCancel from './pages/PaymentCancel.jsx';
 import { Toaster } from 'react-hot-toast';
 import Instructors from './pages/Instructors.jsx';
 
@@ -68,6 +70,10 @@ function App() {
           <Route path="/videos" element={<VideoList />} />
           <Route path="/instructors" element={<Instructors />} />
           <Route path="/videos/upload" element={<ProtectedRoute><VideoUpload /></ProtectedRoute>} />
+          
+          {/* Payment Routes */}
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-cancel" element={<PaymentCancel />} />
         </Routes>
       </div>
 

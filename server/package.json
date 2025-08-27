@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "server": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "server": "nodemon server.js",
+    "build": "echo 'No build step required for Node.js backend'",
+    "test": "echo 'No tests specified'",
+    "lint": "echo 'No linting configured'"
   },
   "keywords": [],
   "author": "",
@@ -23,7 +27,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.0",
     "multer": "^1.4.5-lts.2",
-    "stripe": "^18.1.0"
+    "stripe": "^18.4.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

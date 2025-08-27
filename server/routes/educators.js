@@ -3,6 +3,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import authMiddleware, { authorizeRole } from "../middleware/authMiddleware.js";
+import { getEducatorEarnings } from "../controllers/adminController.js";
 import {
   getEducatorProfile,
   updateEducatorProfile,
@@ -72,6 +73,9 @@ router.delete("/materials/:materialId", authMiddleware, authorizeRole(["educator
 // Appointments
 router.get("/appointments", authMiddleware, authorizeRole(["educator", "admin"]), getEducatorAppointments);
 router.put("/appointments/:id/status", authMiddleware, authorizeRole(["educator", "admin"]), updateAppointmentStatus);
+
+// Earnings (allow educator to view their own earnings)
+router.get('/educators/:educatorId/earnings', authMiddleware, authorizeRole(["educator", "admin"]), getEducatorEarnings);
 
 // Messaging
 router.get("/messages", authMiddleware, authorizeRole(["educator", "admin"]), getEducatorMessages);

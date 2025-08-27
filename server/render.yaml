@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: shikkha-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    # Add your environment variables in Render dashboard:
+    # MONGO_URI, MONGO_DB, JWT_SECRET, SESSION_SECRET, 
+    # STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, CLIENT_URL, CORS_ORIGINS

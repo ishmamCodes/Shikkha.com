@@ -16,13 +16,26 @@ This module contains all student-related components, pages, and services.
 - `/library` → LibraryPage (browse books/materials)
 - `/library/:id` → BookDetailsPage (book details)
 - `/cart` → CartPage (shopping cart)
+- `/exams` → ExamsPage (list available exams)
+- `/exams/attempt/:examId` → ExamAttemptPage (timer-based attempt UI)
+- `/exams/result/:attemptId` → ExamResultPage (score + details)
+- `/grades` → GradesPage (overall results & stats)
+- `/evaluations` → EvaluationsPage (rate completed courses)
 
 ## API Endpoints Used
 ### Student Dashboard
 - `GET /api/student/schedule` - Get student's class schedule
-- `GET /api/student/grades` - Get student's grades
 - `GET /api/student/appointments` - Get booked appointments
 - `DELETE /api/student/appointments/:id` - Cancel appointment
+
+### Exams & Grades
+- `GET /api/exams?studentId=...` - List available exams for the student
+- `POST /api/exams/submit` - Submit an exam attempt (auto-graded)
+- `GET /api/students/:id/grades` - Get exam results and statistics
+
+### Evaluations
+- `GET /api/students/:id/completed-courses` - Courses eligible for evaluation
+- `GET /api/instructors/:id/evaluations-summary` - Instructor ratings (for display)
 
 ### Course Catalog
 - `GET /api/catalog/courses` - List public courses (with filters)
@@ -35,14 +48,19 @@ This module contains all student-related components, pages, and services.
 - `GET /api/marketplace/cart` - Get user's cart
 - `POST /api/marketplace/cart/items` - Add item to cart
 - `DELETE /api/marketplace/cart/items/:itemId` - Remove item from cart
-- `POST /api/marketplace/checkout` - Create order from cart
+- Payments: `POST /api/payments/create-checkout-session` (unified course/book checkout)
 
 ## How to Test
 1. Login as a student user
 2. Navigate to `/dashboard` to see student dashboard
-3. Browse courses at `/courses`
-4. Browse library at `/library`
-5. Add books to cart and checkout
+3. Exams
+   - Go to `/exams` to view available exams
+   - Start an attempt at `/exams/attempt/:examId` and submit
+   - View results at `/exams/result/:attemptId` and overall `/grades`
+4. Evaluations
+   - Go to `/evaluations` and submit ratings/comments (optional comment max 300 chars)
+5. Marketplace
+   - Browse library at `/library`, add to cart, then checkout via Stripe (unified checkout)
 
 ## Environment Variables
 No additional environment variables required for student features.

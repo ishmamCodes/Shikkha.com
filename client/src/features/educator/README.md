@@ -9,10 +9,11 @@ Structure
   - ProfilePage.jsx: View/update educator profile
   - CreateCoursePage.jsx: Create a new course
   - ManageCoursesPage.jsx: View courses and manage enrolled students
-  - AppointmentsPage.jsx: View upcoming appointments
+  - AppointmentsPage.jsx: Manage appointments and available time slots (tabs)
+  - ExamsPage.jsx: Create and manage exams per course
   - UploadMaterialsPage.jsx: Upload files, optionally linked to a course
 - services
-  - educatorApi.js: Axios wrapper for backend endpoints
+  - educatorApi.js: Axios wrapper for backend endpoints (courses, appointments, exams)
 - hooks
   - (reserved for future custom hooks)
 - styles
@@ -24,8 +25,14 @@ Routes and Backend Endpoints
 - CreateCoursePage → POST `/api/courses`
 - ManageCoursesPage → GET `/api/educators/:id` (to list educator courses)
 - StudentList → GET `/api/courses/:id/students`, DELETE `/api/courses/:id/students/:studentId`
-- AppointmentsPage → GET `/api/appointments?educatorId=<id>`
-- UploadMaterialsPage → POST `/api/uploads` (multipart/form-data)
+- Appointments (Available Slots)
+  - Create slot → POST `/api/appointments/slots`
+  - Get my slots → GET `/api/appointments/slots/:educatorId`
+  - Slot fields: `date`, `startTime`, `duration`, `price`, `description`, `isPublished` (admin approval)
+- Exams
+  - Create exam → POST `/api/exams`
+  - Get my exams → GET `/api/exams/educator/:educatorId`
+  - Get course exams → GET `/api/exams/course/:courseId`
 
 Example usage
 ```jsx
@@ -40,4 +47,6 @@ Auth
 - User object stored as `user` (must have `role==='educator'`)
 - Route `/dashboard/educator/*` is protected in `EducatorDashboard.jsx`
 
-
+Notes
+- Appointment slots may require admin approval (`isPublished`) before visible to students.
+- Exams support MCQ questions with options and a correct answer; auto-grading occurs on submission by students.

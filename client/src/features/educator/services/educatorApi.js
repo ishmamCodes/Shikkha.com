@@ -51,12 +51,28 @@ const educatorApi = {
     return data;
   },
   async getAppointments(educatorId) {
-    const { data } = await api.get(`/appointments`, { params: { educatorId } });
+    const { data } = await api.get(`/appointments/educator/${educatorId}`);
     return data?.data;
   },
   async updateAppointmentStatus(appointmentId, status, notes) {
-    const { data } = await api.put(`/appointments/${appointmentId}/status`, { status, notes });
+    const { data } = await api.patch(`/appointments/${appointmentId}`, { status, notes });
     return data?.data;
+  },
+  async deleteAppointment(appointmentId) {
+    const { data } = await api.delete(`/appointments/${appointmentId}`);
+    return data;
+  },
+  async createAppointmentSlot(payload) {
+    const { data } = await api.post('/appointments/slots', payload);
+    return data?.data;
+  },
+  async getAppointmentSlots(educatorId) {
+    const { data } = await api.get(`/appointments/slots/${educatorId}`);
+    return data?.data;
+  },
+  async deleteAppointmentSlot(slotId) {
+    const { data } = await api.delete(`/appointments/slots/${slotId}`);
+    return data;
   },
   async getMessages(studentId = null) {
     const params = studentId ? { studentId } : {};
@@ -91,6 +107,42 @@ const educatorApi = {
   },
   async getStats() {
     const { data } = await api.get('/dashboard/stats');
+    return data?.data;
+  },
+  async getEarnings(educatorId) {
+    const { data } = await api.get(`/educators/${educatorId}/earnings`);
+    return data?.data;
+  },
+  async createExam(payload) {
+    const { data } = await api.post('/exams', payload);
+    return data?.data;
+  },
+  async getEducatorExams(educatorId) {
+    const { data } = await api.get(`/exams/educator/${educatorId}`);
+    return data?.data;
+  },
+  async getCourseExams(courseId) {
+    const { data } = await api.get(`/exams/course/${courseId}`);
+    return data?.data;
+  },
+  async getExamById(examId) {
+    const { data } = await api.get(`/exams/${examId}?includeAnswers=true`);
+    return data?.data;
+  },
+  async updateExam(examId, payload) {
+    const { data } = await api.put(`/exams/${examId}`, payload);
+    return data?.data;
+  },
+  async deleteExam(examId) {
+    const { data } = await api.delete(`/exams/${examId}`);
+    return data;
+  },
+  async getEducatorEvaluations(educatorId) {
+    const { data } = await api.get(`/evaluations/educator/${educatorId}`);
+    return data?.data;
+  },
+  async getCourseEvaluations(courseId) {
+    const { data } = await api.get(`/evaluations/course/${courseId}`);
     return data?.data;
   }
 };

@@ -7,7 +7,7 @@ export const getBooks = async (req, res) => {
   try {
     const { q, category, priceMin, priceMax, page = 1, limit = 10 } = req.query;
     
-    let query = { inStock: true };
+    let query = {};
     
     // Add search query
     if (q) {
@@ -99,7 +99,7 @@ export const getCart = async (req, res) => {
 // POST /api/marketplace/cart/items - Add/update item in cart
 export const addToCart = async (req, res) => {
   try {
-    const { bookId, qty = 1 } = req.body;
+    const { bookId, quantity = 1 } = req.body;
     const userId = req.user.id;
     const userRole = req.user.role;
     
@@ -108,10 +108,23 @@ export const addToCart = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Only students can add items to cart' });
     }
     
-    // Verify book exists
+    // Verify book exists and check stock
     const book = await Book.findById(bookId);
     if (!book) {
       return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+    
+    // Check if book is in stock
+    if (!book.inStock || book.stockQuantity <= 0) {
+      return res.status(400).json({ success: false, message: 'This book is currently out of stock' });
+    }
+    
+    // Check if requested quantity is available
+    if (book.stockQuantity < quantity) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Only ${book.stockQuantity} copies available in stock` 
+      });
     }
     
     // Get or create cart
@@ -126,13 +139,21 @@ export const addToCart = async (req, res) => {
     );
     
     if (existingItemIndex > -1) {
+      // Check total quantity after update
+      const newQuantity = cart.items[existingItemIndex].quantity + parseInt(quantity);
+      if (newQuantity > book.stockQuantity) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Cannot add more items. Only ${book.stockQuantity} copies available in stock` 
+        });
+      }
       // Update quantity
-      cart.items[existingItemIndex].quantity += parseInt(qty);
+      cart.items[existingItemIndex].quantity = newQuantity;
     } else {
       // Add new item
       cart.items.push({
         bookId,
-        quantity: parseInt(qty),
+        quantity: parseInt(quantity),
         price: book.price
       });
     }

@@ -8,6 +8,7 @@ import Appointment from '../models/Appointment.js';
 import Material from "../models/Material.js";
 import Educator from '../models/Educator.js';
 import Message from '../models/Message.js';
+import BookPurchase from '../models/BookPurchase.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -20,7 +21,24 @@ export const getDashboardStats = async (req, res) => {
   try {
     const studentId = req.user.id;
 
-    const enrolledCoursesCount = await Course.countDocuments({ students: studentId });
+    // Count courses from both direct enrollment and payment-based enrollment
+    const [directCoursesCount, enrollmentRecordsCount] = await Promise.all([
+      Course.countDocuments({ students: studentId }),
+      Enrollment.countDocuments({ studentId, status: 'active' })
+    ]);
+
+    // Get unique course IDs to avoid double counting
+    const [directCourses, enrollmentRecords] = await Promise.all([
+      Course.find({ students: studentId }).select('_id'),
+      Enrollment.find({ studentId, status: 'active' }).select('courseId')
+    ]);
+
+    const directCourseIds = new Set(directCourses.map(c => c._id.toString()));
+    const enrollmentCourseIds = new Set(enrollmentRecords.map(e => e.courseId.toString()));
+    
+    // Combine and deduplicate
+    const allCourseIds = new Set([...directCourseIds, ...enrollmentCourseIds]);
+    const totalEnrolledCourses = allCourseIds.size;
 
     const upcomingAppointmentsCount = await Appointment.countDocuments({
       studentId,
@@ -34,10 +52,12 @@ export const getDashboardStats = async (req, res) => {
       isDeleted: false,
     });
 
+    console.log(`Dashboard stats for student ${studentId}: ${totalEnrolledCourses} enrolled courses (${directCoursesCount} direct + ${enrollmentRecordsCount} paid)`);
+
     res.status(200).json({
       success: true,
       data: {
-        enrolledCourses: enrolledCoursesCount,
+        enrolledCourses: totalEnrolledCourses,
         upcomingAppointments: upcomingAppointmentsCount,
         unreadMessages: unreadMessagesCount,
       },
@@ -536,14 +556,99 @@ export const getStudentCourses = async (req, res) => {
   try {
     const studentId = req.user.id;
 
-    const courses = await Course.find({ students: studentId })
-      .populate({ path: "instructor", select: "fullName _id" })
-      .sort({ createdAt: -1 });
+    // Get courses from both direct enrollment (students array) and enrollment records
+    const [directCourses, enrollmentRecords] = await Promise.all([
+      Course.find({ students: studentId })
+        .populate({ path: "instructor", select: "fullName _id" })
+        .sort({ createdAt: -1 }),
+      Enrollment.find({ studentId, status: 'active' })
+        .populate({
+          path: 'courseId',
+          populate: { path: 'instructor', select: 'fullName _id' }
+        })
+        .sort({ createdAt: -1 })
+    ]);
+
+    // Combine and deduplicate courses
+    const courseMap = new Map();
+    
+    // Add direct courses
+    directCourses.forEach(course => {
+      courseMap.set(course._id.toString(), {
+        ...course.toObject(),
+        enrollmentStatus: 'enrolled'
+      });
+    });
+    
+    // Add enrollment-based courses
+    enrollmentRecords.forEach(enrollment => {
+      if (enrollment.courseId) {
+        courseMap.set(enrollment.courseId._id.toString(), {
+          ...enrollment.courseId.toObject(),
+          enrollmentStatus: 'enrolled',
+          enrollmentDate: enrollment.createdAt
+        });
+      }
+    });
+
+    const courses = Array.from(courseMap.values());
+    console.log(`Found ${courses.length} enrolled courses for student ${studentId}`);
 
     res.status(200).json({ success: true, data: courses });
   } catch (err) {
     console.error("[getStudentCourses]", err);
     res.status(500).json({ success: false, message: "Failed to fetch courses" });
+  }
+};
+
+// New endpoint: Get student purchases
+export const getStudentPurchases = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    // Get book purchases from BookPurchase records
+    const bookPurchases = await BookPurchase.find({ studentId })
+      .populate('bookId', 'title author price coverImage')
+      .sort({ createdAt: -1 });
+
+    // Deduplicate by bookId: aggregate quantity and keep latest purchase date/status
+    const mapByBook = new Map();
+    for (const p of bookPurchases) {
+      const bId = p.bookId?._id?.toString();
+      if (!bId) continue;
+      const existing = mapByBook.get(bId);
+      const latestDate = existing ? (p.createdAt > existing.purchaseDate ? p.createdAt : existing.purchaseDate) : p.createdAt;
+      const aggQuantity = (existing?.quantity || 0) + (p.quantity || 1);
+      // Status: if any is 'pending', mark pending, else prefer the most recent status
+      const status = existing?.status === 'pending' || p.status === 'pending' ? 'pending' : (p.createdAt >= (existing?.purchaseDate || 0) ? p.status : existing?.status || p.status);
+      const totalAmount = (existing?.totalAmount || 0) + (p.amount || 0);
+
+      mapByBook.set(bId, {
+        _id: existing?._id || p._id,
+        bookId: p.bookId?._id,
+        title: p.bookId?.title,
+        author: p.bookId?.author,
+        // Use consistent unit price from book model; also include totalAmount for reference
+        price: p.bookId?.price ?? p.amount, // unit price for display
+        totalAmount,
+        quantity: aggQuantity,
+        status,
+        deliveryStatus: status,
+        purchaseDate: latestDate,
+        shippingInfo: p.shippingInfo || existing?.shippingInfo,
+        coverImage: p.bookId?.coverImage || '',
+        // Keep thumbnailUrl for backward compatibility (same as coverImage)
+        thumbnailUrl: p.bookId?.coverImage || ''
+      });
+    }
+
+    const purchases = Array.from(mapByBook.values());
+    console.log(`Found ${bookPurchases.length} raw purchases; returning ${purchases.length} unique books for student ${studentId}`);
+
+    res.status(200).json({ success: true, data: purchases });
+  } catch (err) {
+    console.error("[getStudentPurchases]", err);
+    res.status(500).json({ success: false, message: "Failed to fetch purchases" });
   }
 };
 
@@ -616,15 +721,117 @@ export const getStudentCourseMaterials = async (req, res) => {
   }
 };
 
+// Get completed courses for evaluation
+export const getCompletedCourses = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    // Validate student exists
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    // Get enrolled courses (assuming completion based on enrollment for now)
+    const courses = await Course.find({ 
+      students: studentId 
+    }).populate('instructor', 'fullName email');
+
+    // Check which courses have been evaluated by this student
+    const Evaluation = (await import('../models/Evaluation.js')).default;
+    const existingEvaluations = await Evaluation.find({ studentId }).select('courseId');
+    const evaluatedCourseIds = existingEvaluations.map(evaluation => evaluation.courseId.toString());
+
+    // Format courses for evaluation
+    const completedCourses = courses.map(course => ({
+      _id: course._id,
+      title: course.title,
+      description: course.description,
+      category: course.category,
+      instructor: course.instructor,
+      enrolledAt: course.createdAt,
+      completedAt: course.updatedAt, // Placeholder - in real app, track actual completion
+      hasEvaluated: evaluatedCourseIds.includes(course._id.toString())
+    }));
+
+    res.json({
+      success: true,
+      data: completedCourses
+    });
+  } catch (error) {
+    console.error("Get completed courses error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch completed courses" });
+  }
+};
+
 // Student profile
 export const getStudentProfile = async (req, res) => {
   try {
     const studentId = req.user.id || req.user._id;
     const profile = await Student.findById(studentId).select('-password');
     if (!profile) {
-      return res.status(404).json({ success: false, message: 'Student profile not found' });
+      return res.status(404).json({ success: false, message: "Student not found" });
     }
-    return res.status(200).json({ success: true, data: profile });
+
+    // Calculate GPA from exam results
+    const ExamResult = (await import('../models/ExamResult.js')).default;
+    const examResults = await ExamResult.find({ studentId })
+      .populate({
+        path: 'examId',
+        populate: {
+          path: 'courseId',
+          select: 'title'
+        }
+      });
+
+    // Calculate GPA based on course averages
+    const courseGrades = {};
+    examResults.forEach(result => {
+      if (result.examId?.courseId?._id) {
+        const courseIdStr = result.examId.courseId._id.toString();
+        if (!courseGrades[courseIdStr]) {
+          courseGrades[courseIdStr] = {
+            courseTitle: result.examId.courseId.title,
+            percentages: []
+          };
+        }
+        courseGrades[courseIdStr].percentages.push(result.percentage);
+      }
+    });
+
+    // Calculate average percentage per course and convert to GPA
+    const calculateGPA = (percentage) => {
+      if (percentage >= 97) return 4.0;
+      if (percentage >= 93) return 3.7;
+      if (percentage >= 90) return 3.3;
+      if (percentage >= 87) return 3.0;
+      if (percentage >= 83) return 2.7;
+      if (percentage >= 80) return 2.3;
+      if (percentage >= 77) return 2.0;
+      if (percentage >= 73) return 1.7;
+      if (percentage >= 70) return 1.3;
+      if (percentage >= 67) return 1.0;
+      if (percentage >= 65) return 0.7;
+      return 0.0;
+    };
+
+    const courseAverages = Object.values(courseGrades).map(course => {
+      const avgPercentage = course.percentages.reduce((sum, p) => sum + p, 0) / course.percentages.length;
+      return calculateGPA(avgPercentage);
+    });
+
+    const overallGPA = courseAverages.length > 0 
+      ? (courseAverages.reduce((sum, gpa) => sum + gpa, 0) / courseAverages.length).toFixed(2)
+      : 0;
+
+    return res.status(200).json({ 
+      success: true, 
+      data: {
+        ...profile.toObject(),
+        gpa: parseFloat(overallGPA),
+        totalCourses: courseAverages.length
+      }
+    });
   } catch (err) {
     console.error("[getStudentProfile]", err);
     return res.status(500).json({ success: false, message: "Failed to fetch student profile" });

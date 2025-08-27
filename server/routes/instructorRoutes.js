@@ -1,5 +1,6 @@
 import express from 'express';
-import { listInstructors, createInstructor } from '../controllers/instructorController.js';
+import { listInstructors, createInstructor, updateInstructor, deleteInstructor } from '../controllers/instructorController.js';
+import { getInstructorEvaluationsSummary } from '../controllers/evaluationsController.js';
 import authMiddleware, { authorizeRole } from '../middleware/authMiddleware.js';
 import multer from 'multer';
 import path from 'path';
@@ -32,7 +33,16 @@ const upload = multer({
 // Public: list instructors
 router.get('/', listInstructors);
 
+// Public: instructor evaluations summary (avg rating, counts)
+router.get('/:id/evaluations-summary', getInstructorEvaluationsSummary);
+
 // Admin: create instructor card (supports file upload as 'image')
 router.post('/', authMiddleware, authorizeRole(['admin']), upload.single('image'), createInstructor);
+
+// Admin: update instructor card (supports file upload as 'image')
+router.put('/:id', authMiddleware, authorizeRole(['admin']), upload.single('image'), updateInstructor);
+
+// Admin: delete instructor card
+router.delete('/:id', authMiddleware, authorizeRole(['admin']), deleteInstructor);
 
 export default router;

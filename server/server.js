@@ -22,6 +22,11 @@ import videoRoutes from "./routes/videoRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import instructorRoutes from "./routes/instructorRoutes.js";
 import marketplaceRoutes from "./routes/marketplace/index.js";
+import appointmentRoutes from "./routes/appointments.js";
+import examRoutes from "./routes/exams.js";
+import evaluationRoutes from "./routes/evaluations.js";
+import paymentRoutes from "./routes/payments.js";
+import adminRoutes from "./routes/admin.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -32,10 +37,28 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://shikkha_admin:Shikkha1
 
 // Enhanced CORS configuration
 const corsOptions = {
-  // Reflect the request Origin (enables any localhost port like 5176 during dev)
-  origin: true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // In development, allow any localhost
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
+    // In production, check against allowed origins
+    const allowedOrigins = process.env.CORS_ORIGINS 
+      ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+      : ['https://your-vercel-app.vercel.app'];
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200,
 };
@@ -58,15 +81,22 @@ app.use((req, res, next) => {
   next();
 });
 
+// Stripe webhook endpoint needs raw body, so add it before JSON parsing
+app.use('/api/payments/stripe/webhook', express.raw({type: 'application/json'}));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Session Middleware
 app.use(session({
-  secret: "shikkha_secret_key", // Replace with a strong secret in production
+  secret: process.env.SESSION_SECRET || "shikkha_secret_key",
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // Set to true if HTTPS
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', // HTTPS in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 // Route Mounting
@@ -79,6 +109,11 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/instructors", instructorRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/exams", examRoutes);
+app.use("/api/evaluations", evaluationRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/logo.jpg', express.static('client/public/logo.jpg'));
 

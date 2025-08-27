@@ -7,6 +7,7 @@ import ManageStudents from './ManageStudents.jsx';
 import AddInstructor from './AddInstructor.jsx';
 import ManageBlogs from './ManageBlogs.jsx';
 import ManageBooks from './ManageBooks.jsx';
+import SalesPage from './SalesPage.jsx';
 import logo from '../../../assets/logo.png';
 
 const AdminDashboard = () => {
@@ -33,6 +34,7 @@ const AdminDashboard = () => {
             <Route path="add-instructor" element={<AddInstructor />} />
             <Route path="blogs" element={<ManageBlogs />} />
             <Route path="books" element={<ManageBooks />} />
+            <Route path="sales" element={<SalesPage />} />
           </Routes>
         </div>
       </main>

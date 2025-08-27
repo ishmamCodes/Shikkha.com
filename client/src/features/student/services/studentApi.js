@@ -189,6 +189,13 @@ const studentApi = {
     const api = createAuthenticatedRequest();
     const response = await api.delete('/students/profile/avatar');
     return response.data;
+  },
+
+  // Student purchases
+  getPurchases: async () => {
+    const api = createAuthenticatedRequest();
+    const response = await api.get('/students/purchases');
+    return response.data;
   }
 };
 

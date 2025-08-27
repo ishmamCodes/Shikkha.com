@@ -38,15 +38,32 @@ export const getCourses = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     const courses = await Course.find(query)
+      .populate('instructor', 'fullName')
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
+    
+    // Add enrollment counts to each course
+    const coursesWithCounts = await Promise.all(
+      courses.map(async (course) => {
+        const enrollmentCount = await Enrollment.countDocuments({ 
+          courseId: course._id, 
+          status: 'active' 
+        });
+        
+        return {
+          ...course.toObject(),
+          enrolledCount: enrollmentCount,
+          instructorName: course.instructor?.fullName
+        };
+      })
+    );
     
     const total = await Course.countDocuments(query);
     
     res.json({
       success: true,
-      courses,
+      courses: coursesWithCounts,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),

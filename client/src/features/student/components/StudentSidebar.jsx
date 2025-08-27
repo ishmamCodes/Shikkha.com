@@ -10,7 +10,9 @@ import {
   FaUserCircle,
   FaCog,
   FaSignOutAlt,
-  FaFolderOpen
+  FaFolderOpen,
+  FaClipboardList,
+  FaStar
 } from 'react-icons/fa';
 import logo from '../../../assets/logo.png';
 
@@ -25,10 +27,14 @@ const StudentSidebar = () => {
 
   const navItems = [
     { path: '/dashboard/student', icon: FaHome, label: 'Dashboard', end: true },
+    { path: '/dashboard/student/enrolled-courses', icon: FaBookOpen, label: 'Enrolled Courses' },
     { path: '/dashboard/student/schedule', icon: FaCalendarAlt, label: 'Schedule' },
     { path: '/dashboard/student/materials', icon: FaFolderOpen, label: 'Materials' },
     { path: '/dashboard/student/appointments', icon: FaCalendarAlt, label: 'Appointments' },
+    { path: '/dashboard/student/exams', icon: FaClipboardList, label: 'Exams' },
     { path: '/dashboard/student/grades', icon: FaGraduationCap, label: 'Grades' },
+    { path: '/dashboard/student/evaluations', icon: FaStar, label: 'Evaluations' },
+    { path: '/dashboard/student/books', icon: FaBook, label: 'My Books' },
     { path: '/dashboard/student/profile', icon: FaUserCircle, label: 'Profile' },
     { path: '/dashboard/student/settings', icon: FaCog, label: 'Settings' }
   ];

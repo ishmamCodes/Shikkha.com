@@ -1,6 +1,8 @@
 import express from "express";
 import Course from "../models/Course.js";
 import Enrollment from "../models/Enrollment.js";
+import Student from "../models/Student.js";
+import mongoose from "mongoose";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -52,6 +54,67 @@ router.get("/:id", async (req, res) => {
   } catch (error) {
     console.error("Error fetching course:", error);
     res.status(500).json({ error: "Failed to fetch course" });
+  }
+});
+
+/**
+ * Get all students for a specific course
+ */
+router.get("/:id/students", authMiddleware, async (req, res) => {
+  try {
+    console.log("Fetching students for course:", req.params.id);
+    
+    // First check if course exists
+    const course = await Course.findById(req.params.id).select("students");
+    if (!course) {
+      console.log("Course not found:", req.params.id);
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    console.log("Course students array:", course.students);
+
+    // Handle both enrolled students and purchased students
+    let allStudentIds = [];
+    
+    // Get students from course.students array (enrolled)
+    if (Array.isArray(course.students)) {
+      const validCourseIds = course.students.filter(id => mongoose.Types.ObjectId.isValid(id));
+      allStudentIds.push(...validCourseIds);
+    }
+
+    // Get students who purchased this course via payments
+    try {
+      const enrollments = await Enrollment.find({ courseId: req.params.id }).select("studentId");
+      const purchasedStudentIds = enrollments
+        .map(e => e.studentId)
+        .filter(id => mongoose.Types.ObjectId.isValid(id));
+      allStudentIds.push(...purchasedStudentIds);
+    } catch (enrollmentError) {
+      console.log("No enrollments found or enrollment model issue:", enrollmentError.message);
+    }
+
+    // Remove duplicates
+    const uniqueStudentIds = [...new Set(allStudentIds.map(id => id.toString()))];
+    console.log("Unique student IDs:", uniqueStudentIds);
+
+    if (uniqueStudentIds.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const students = await Student.find({ 
+      _id: { $in: uniqueStudentIds } 
+    }, "fullName email").lean();
+
+    console.log("Found students:", students);
+
+    return res.json({ success: true, data: students });
+  } catch (error) {
+    console.error("Error fetching course students:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch course students",
+      error: error.message 
+    });
   }
 });
 
@@ -162,8 +225,13 @@ router.post("/", authMiddleware, async (req, res) => {
       thumbnailUrl,
       privacy,
       price,
+      isPaid,
+      maxStudents,
       duration,
-      tags
+      tags,
+      scheduleDays,
+      scheduleSlot,
+      startingDate
     } = req.body;
 
     if (!title || !category || !difficultyLevel) {
@@ -177,10 +245,17 @@ router.post("/", authMiddleware, async (req, res) => {
       difficultyLevel,
       thumbnailUrl,
       instructor: req.user.id,
+      instructorName: req.user.fullName || req.user.name || 'Unknown Instructor',
       privacy: privacy || "public",
-      price: price || 0,
+      price: isPaid ? (price || 0) : 0,
+      isPaid: isPaid || false,
+      maxStudents: maxStudents || null,
+      enrolledCount: 0,
       duration,
-      tags: tags || []
+      tags: tags || [],
+      scheduleDays: scheduleDays || [],
+      scheduleSlot: scheduleSlot || '',
+      startingDate: startingDate ? new Date(startingDate) : null
     });
 
     await course.save();

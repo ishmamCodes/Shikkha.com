@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { FaUser, FaUsers, FaClock, FaCheckCircle, FaTimes, FaTag, FaSignal, FaBookOpen, FaCalendarAlt } from 'react-icons/fa';
 import studentApi from '../../student/services/studentApi';
+import { createCheckoutSession, enrollInFreeCourse } from '../../../api/checkoutApi';
 import toast from 'react-hot-toast';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
+import EnrollmentForm from '../../../components/EnrollmentForm';
 
 const CourseDetailsModal = ({ courseId, onClose, onEnrollSuccess, isEnrolled = false }) => {
   const [course, setCourse] = useState(null);
@@ -10,6 +12,7 @@ const CourseDetailsModal = ({ courseId, onClose, onEnrollSuccess, isEnrolled = f
   const [enrolling, setEnrolling] = useState(false);
   const [localEnrolled, setLocalEnrolled] = useState(isEnrolled);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showEnrollmentForm, setShowEnrollmentForm] = useState(false);
 
   const getImageSrc = (url) => {
     if (!url) return '';
@@ -47,17 +50,33 @@ const CourseDetailsModal = ({ courseId, onClose, onEnrollSuccess, isEnrolled = f
   }, [courseId, onClose]);
 
   const handleEnrollClick = () => {
-    setShowConfirmDialog(true);
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.role !== 'student') {
+      toast.error('Please log in as a student to enroll');
+      return;
+    }
+
+    // For free courses, show confirmation dialog
+    if (!course.price || Number(course.price) === 0) {
+      setShowConfirmDialog(true);
+    } else {
+      // For paid courses, show enrollment form
+      setShowEnrollmentForm(true);
+    }
   };
 
   const handleConfirmEnroll = async () => {
-    if (!courseId) return;
+    if (!courseId || !course) return;
     setShowConfirmDialog(false);
     setEnrolling(true);
+    
     try {
-      const response = await studentApi.enrollInCourse(courseId);
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      // Free course enrollment
+      const response = await enrollInFreeCourse(courseId, user._id || user.id);
       if (response.success) {
-        toast.success('🎉 You enrolled in this course!');
+        toast.success('🎉 You enrolled in this free course!');
         setLocalEnrolled(true);
         onEnrollSuccess?.(courseId);
       } else {
@@ -65,9 +84,49 @@ const CourseDetailsModal = ({ courseId, onClose, onEnrollSuccess, isEnrolled = f
       }
     } catch (err) {
       console.error('Error enrolling in course:', err);
-      toast.error('Failed to enroll');
+      toast.error(err.message || 'Failed to enroll');
     } finally {
       setEnrolling(false);
+    }
+  };
+
+  const handleEnrollmentSubmit = async (enrollmentInfo) => {
+    if (!courseId || !course) return;
+    setEnrolling(true);
+    
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const studentId = user?._id || user?.id;
+      
+      if (!studentId) {
+        toast.error('Please log in to enroll in courses');
+        return;
+      }
+      
+      console.log('Creating course checkout session with:', {
+        type: 'course',
+        itemId: courseId,
+        studentId: studentId
+      });
+      
+      // Store enrollment info for later use
+      localStorage.setItem(`enrollment_${courseId}`, JSON.stringify(enrollmentInfo));
+      
+      // Paid course - redirect to Stripe checkout
+      const response = await createCheckoutSession('course', courseId, studentId);
+      if (response.success && response.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.url;
+        return; // Don't continue with local state updates
+      } else {
+        throw new Error(response.message || 'Failed to create checkout session');
+      }
+    } catch (err) {
+      console.error('Error enrolling in course:', err);
+      toast.error(err.message || 'Failed to enroll');
+    } finally {
+      setEnrolling(false);
+      setShowEnrollmentForm(false);
     }
   };
 
@@ -182,7 +241,7 @@ const CourseDetailsModal = ({ courseId, onClose, onEnrollSuccess, isEnrolled = f
           </>
         )}
 
-        {/* Confirmation Dialog */}
+        {/* Confirmation Dialog for Free Courses */}
         <ConfirmationDialog
           isOpen={showConfirmDialog}
           onClose={() => setShowConfirmDialog(false)}
@@ -193,6 +252,16 @@ const CourseDetailsModal = ({ courseId, onClose, onEnrollSuccess, isEnrolled = f
           cancelText="Cancel"
           type="success"
         />
+
+        {/* Enrollment Form for Paid Courses */}
+        {showEnrollmentForm && (
+          <EnrollmentForm
+            course={course}
+            onSubmit={handleEnrollmentSubmit}
+            onClose={() => setShowEnrollmentForm(false)}
+            loading={enrolling}
+          />
+        )}
       </div>
     </div>
   );
