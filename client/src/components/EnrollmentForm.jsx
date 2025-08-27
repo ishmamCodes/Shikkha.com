@@ -25,7 +25,7 @@ const EnrollmentForm = ({ course, onSubmit, onClose, loading }) => {
         const token = localStorage.getItem('token');
         
         if (user && token) {
-          const response = await fetch(`http://localhost:4000/api/students/${user._id || user.id}`, {
+          const response = await fetch(`https://shikkha-com.onrender.com/api/students/${user._id || user.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

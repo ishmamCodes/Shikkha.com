@@ -8,7 +8,7 @@ const UserSearch = ({ onSelect }) => {
 
   const search = async () => {
     try {
-      const res = await axios.get(`http://localhost:4000/users/search?query=${query}`);
+      const res = await axios.get(`https://shikkha-com.onrender.com/users/search?query=${query}`);
       setResults(res.data);
     } catch (err) {
       console.error('Search failed:', err);

@@ -71,7 +71,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Session Middleware
 app.use(session({
-  secret: "shikkha_secret_key", // Replace with a strong secret in production
+  secret: "shikkha.com_470_project", // Replace with a strong secret in production
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false } // Set to true if HTTPS

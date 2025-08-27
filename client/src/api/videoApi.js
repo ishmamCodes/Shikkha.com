@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:4000/api",
+  baseURL: "https://shikkha-com.onrender.com",
 });
 
 // Attach token automatically if it exists

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const SERVER_ORIGIN = 'http://localhost:4000';
+const SERVER_ORIGIN = 'https://shikkha-com.onrender.com';
 const api = axios.create({ baseURL: `${SERVER_ORIGIN}/api` });
 
 api.interceptors.request.use((config) => {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = 'https://shikkha-com.onrender.com';
 
 // Create axios instance with auth header
 const createAuthenticatedRequest = () => {

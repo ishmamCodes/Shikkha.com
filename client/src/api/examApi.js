@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_BASE_URL = 'https://shikkha-com.onrender.com';
 
 // Get available exams for a student (based on enrolled courses)
 export const getAvailableExams = async (studentId) => {

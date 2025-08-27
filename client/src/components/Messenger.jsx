@@ -21,7 +21,7 @@ const Messenger = () => {
   };
 
   // Axios defaults
-  axios.defaults.baseURL = 'http://localhost:4000';
+  axios.defaults.baseURL = 'https://shikkha-com.onrender.com';
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
