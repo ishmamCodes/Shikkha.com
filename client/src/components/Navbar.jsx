@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import logo from '../assets/logo192.png';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiHome, FiMessageSquare, FiBook, FiLogIn, FiLogOut, FiUser, FiGrid, FiVideo, FiShoppingCart, FiBookOpen, FiUsers } from 'react-icons/fi';
-import { FiCpu } from 'react-icons/fi';
+import { FiHome, FiMessageSquare, FiBook, FiLogIn, FiLogOut, FiUser, FiGrid, FiVideo, FiShoppingCart, FiBookOpen, FiUsers, FiCpu } from 'react-icons/fi';
 import { useUser } from '../context/UserContext';
 
 const Navbar = () => {
@@ -38,6 +37,7 @@ const Navbar = () => {
     { label: 'Blog', path: '/blog', icon: <FiBook /> },
     { label: 'Messenger', path: '/messenger', icon: <FiMessageSquare /> },
     { label: 'Videos', path: '/videos', icon: <FiVideo /> },
+    { label: 'AI Ask', path: '/ai', icon: <FiCpu /> },
   ];
   // Hide Messenger for admins
   const menuItems = user?.role === 'admin'
@@ -70,6 +70,8 @@ const Navbar = () => {
       setMenu('Blog');
     } else if (path.startsWith('/messenger')) {
       setMenu('Messenger');
+    } else if (path.startsWith('/ai')) {
+      setMenu('AI Ask');
     } else {
       const segment = path.split('/')[1];
       const capitalized = segment ? segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase() : 'Home';
