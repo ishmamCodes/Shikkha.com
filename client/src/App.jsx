@@ -22,6 +22,7 @@ import PaymentSuccess from './pages/PaymentSuccess.jsx';
 import PaymentCancel from './pages/PaymentCancel.jsx';
 import { Toaster } from 'react-hot-toast';
 import Instructors from './pages/Instructors.jsx';
+import AIAsk from './components/AIAsk.jsx';
 
 function App() {
   const location = useLocation();
@@ -72,6 +73,9 @@ function App() {
           {/* Payment Routes */}
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-cancel" element={<PaymentCancel />} />
+
+          {/* AI Route */}
+          <Route path="/ai" element={<AIAsk />} />
         </Routes>
       </div>
 
