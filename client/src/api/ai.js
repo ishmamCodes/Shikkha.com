@@ -1,7 +1,7 @@
 // client/services/ai.js
 import axios from 'axios';
 
-const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api';
+const BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE || 'http://localhost:4000/api';
 
 export const askAI = async (question, token) => {
   const headers = { 'Content-Type': 'application/json' };
