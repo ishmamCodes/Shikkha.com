@@ -331,6 +331,24 @@ const Navbar = () => {
                   Library
                 </Link>
               </motion.div>
+
+              <motion.div
+                onHoverStart={() => setIsHovering("AI Ask")}
+                onHoverEnd={() => setIsHovering(null)}
+                className="relative"
+              >
+                <Link
+                  to="/ai"
+                  className={`flex items-center px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                    menu === "AI Ask" 
+                      ? 'text-white bg-gradient-to-r from-cyan-500 to-blue-500 shadow-md' 
+                      : 'text-gray-600 hover:text-cyan-600'
+                  } transition-all duration-300`}
+                >
+                  <span className="mr-2"><FiCpu /></span>
+                  AI Ask
+                </Link>
+              </motion.div>
             </>
           )}
 
