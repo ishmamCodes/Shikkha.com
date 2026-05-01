@@ -3,7 +3,6 @@ import logo from '../assets/logo192.png';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiHome, FiMessageSquare, FiBook, FiLogIn, FiLogOut, FiUser, FiGrid, FiVideo, FiShoppingCart, FiBookOpen, FiUsers, FiCpu, FiFileText } from 'react-icons/fi';
-import { FiCpu } from 'react-icons/fi';
 import { useUser } from '../context/UserContext';
 
 const Navbar = () => {
