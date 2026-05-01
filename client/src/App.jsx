@@ -24,6 +24,7 @@ import PaymentCancel from './pages/PaymentCancel.jsx';
 import { Toaster } from 'react-hot-toast';
 import Instructors from './pages/Instructors.jsx';
 import AIAsk from './components/AIAsk.jsx';
+import CVAnalysis from './pages/CVAnalysis.jsx';
 
 
 
@@ -80,7 +81,11 @@ function App() {
 
           {/* AI Route */}
           <Route path="/ai" element={<AIAsk />} />
-        </Routes>
+   
+
+          {/* CV Analysis Route */}
+          <Route path="/cv-analysis" element={<ProtectedRoute><CVAnalysis /></ProtectedRoute>} />
+          </Routes>
       </div>
 
       {/* Footer */}

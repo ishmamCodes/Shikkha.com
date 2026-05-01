@@ -39,6 +39,7 @@ const Navbar = () => {
     { label: 'Messenger', path: '/messenger', icon: <FiMessageSquare /> },
     { label: 'Videos', path: '/videos', icon: <FiVideo /> },
     { label: 'Ask AI', path: '/ai', icon: <FiCpu /> },
+    { label: 'CV Analysis', path: '/cv-analysis', icon: <FiFileText /> },
   ];
   // Hide Messenger for admins
   const menuItems = user?.role === 'admin'

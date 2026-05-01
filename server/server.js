@@ -28,6 +28,7 @@ import evaluationRoutes from "./routes/evaluations.js";
 import paymentRoutes from "./routes/payments.js";
 import adminRoutes from "./routes/admin.js";
 import aiRoutes from './routes/aiRoutes.js';
+import cvRoutes from './routes/cvRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -96,6 +97,7 @@ app.use("/api/admin", adminRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/logo.jpg', express.static('client/public/logo.jpg'));
 app.use('/api/ai', aiRoutes);
+app.use('/api/cv', cvRoutes);
 
 
 // Health Check Route
