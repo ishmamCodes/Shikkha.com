@@ -21,7 +21,7 @@ const Messenger = () => {
   };
 
   // Axios defaults
-  axios.defaults.baseURL = 'http://localhost:4000';
+  axios.defaults.baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace('/api', '');
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {

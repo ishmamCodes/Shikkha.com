@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const SERVER_ORIGIN = 'http://localhost:4000';
+const SERVER_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace('/api', '');
 const api = axios.create({ baseURL: `${SERVER_ORIGIN}/api` });
 
 api.interceptors.request.use((config) => {

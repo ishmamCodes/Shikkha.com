@@ -1,5 +1,5 @@
 import React from 'react';
-import footer_logo from '/vite.svg';
+import footer_logo from '../assets/logo.png';
 import { FaInstagram, FaPinterest, FaWhatsapp } from 'react-icons/fa';
 
 const Footer = () => {

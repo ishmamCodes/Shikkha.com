@@ -17,7 +17,7 @@ const LoginSignup = () => {
   const navigate = useNavigate();
   const { updateUser } = useUser();
 
-  const API_BASE_URL = "http://localhost:4000/api/auth";
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'}/auth`;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,7 +68,7 @@ const LoginSignup = () => {
       const { user, token } = data;
 
       // Ensure avatarUrl is absolute (server runs on 4000)
-      const SERVER_ORIGIN = "http://localhost:4000";
+      const SERVER_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace('/api', '');
       const normalizedUser = {
         ...user,
         avatarUrl: user?.avatarUrl
