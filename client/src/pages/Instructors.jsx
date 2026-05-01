@@ -20,7 +20,7 @@ const Instructors = () => {
       setError('');
       
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/instructors', { 
+      const res = await fetch(\`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'}/instructors\`, { 
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
